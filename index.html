@@ -32,6 +32,11 @@
     min-height: 60px; margin-bottom: 10px;
   }
   textarea { width: 100%; min-height: 60px; resize: vertical; }
+  .diagnostics {
+    background: rgba(0,0,0,0.3);
+    padding: 10px; border-radius: 8px;
+    font-size: 14px; margin-top: 15px;
+  }
 </style>
 </head>
 <body>
@@ -72,6 +77,14 @@
   <h3>Manuel Mod</h3>
   <textarea id="manualInput" placeholder="Metni yazın..."></textarea>
   <button id="manualTranslateBtn">Çevir</button>
+
+  <div class="diagnostics" id="diagnostics">
+    🔍 Tanılama:<br>
+    - Tarayıcı desteği: kontrol ediliyor...<br>
+    - HTTPS: kontrol ediliyor...<br>
+    - Mikrofon izni: kontrol ediliyor...<br>
+    - Son hata: yok
+  </div>
 </div>
 
 <script>
@@ -84,14 +97,40 @@ const manualInput = document.getElementById("manualInput");
 const manualTranslateBtn = document.getElementById("manualTranslateBtn");
 const sourceLang = document.getElementById("sourceLang");
 const targetLang = document.getElementById("targetLang");
+const diagnostics = document.getElementById("diagnostics");
 
 let recognition;
 let lastTranslated = "";
 
+// Tanılama kontrolü
+function updateDiagnostics(status) {
+  diagnostics.innerHTML = `
+    🔍 Tanılama:<br>
+    - Tarayıcı desteği: ${status.sr}<br>
+    - HTTPS: ${status.https}<br>
+    - Mikrofon izni: ${status.mic}<br>
+    - Son hata: ${status.error}
+  `;
+}
+
+function checkDiagnostics(errorMsg = "yok") {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const srSupport = SR ? "✅ Var" : "❌ Yok";
+  const isHttps = location.protocol === "https:" ? "✅ Evet" : "❌ Hayır";
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(() => {
+      updateDiagnostics({ sr: srSupport, https: isHttps, mic: "✅ İzin verildi", error: errorMsg });
+    })
+    .catch(() => {
+      updateDiagnostics({ sr: srSupport, https: isHttps, mic: "❌ İzin yok", error: errorMsg });
+    });
+}
+checkDiagnostics();
+
 // Ses tanıma
 startBtn.addEventListener("click", () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert("Tarayıcınız ses tanımayı desteklemiyor."); return; }
+  if (!SR) { alert("Tarayıcınız ses tanımayı desteklemiyor."); checkDiagnostics("Tarayıcı desteklemiyor"); return; }
 
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(() => {
@@ -112,6 +151,7 @@ startBtn.addEventListener("click", () => {
       };
       recognition.onerror = (e) => {
         recognizedText.textContent = "Hata: " + e.error;
+        checkDiagnostics(e.error);
       };
       recognition.onend = () => {
         startBtn.disabled = false;
@@ -119,7 +159,7 @@ startBtn.addEventListener("click", () => {
       };
       recognition.start();
     })
-    .catch(() => alert("Mikrofon izni verilmedi."));
+    .catch(() => { alert("Mikrofon izni verilmedi."); checkDiagnostics("Mikrofon izni yok"); });
 });
 
 stopBtn.addEventListener("click", () => {
@@ -136,9 +176,11 @@ async function translateText(text, sourceISO, targetISO) {
     translatedText.textContent = out;
     lastTranslated = out;
     speakBtn.disabled = false;
+    checkDiagnostics();
   } catch {
     translatedText.textContent = "Çeviri hatası!";
     speakBtn.disabled = true;
+    checkDiagnostics("Çeviri hatası");
   }
 }
 
