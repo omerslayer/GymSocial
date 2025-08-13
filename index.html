@@ -9,18 +9,15 @@
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #0ea5e9, #22d3ee);
     margin: 0; padding: 20px; color: white;
-    display: flex; justify-content: center;
+    text-align: center;
   }
-  .container {
-    max-width: 800px; width: 100%;
-    background: rgba(255,255,255,0.1);
-    padding: 20px; border-radius: 15px;
-    backdrop-filter: blur(10px);
-  }
-  h1 { text-align: center; margin-bottom: 10px; }
-  select, button, textarea {
-    padding: 10px; border-radius: 8px; border: none;
+  h1 { margin-bottom: 20px; }
+  select, button {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
     font-size: 14px;
+    margin: 5px;
   }
   button {
     background: #ff4d8d; color: white; cursor: pointer;
@@ -29,63 +26,45 @@
   .box {
     background: rgba(0,0,0,0.3);
     padding: 10px; border-radius: 8px;
-    min-height: 60px; margin-bottom: 10px;
-  }
-  textarea { width: 100%; min-height: 60px; resize: vertical; }
-  .diagnostics {
-    background: rgba(0,0,0,0.3);
-    padding: 10px; border-radius: 8px;
-    font-size: 14px; margin-top: 15px;
+    min-height: 60px; margin: 10px auto; max-width: 500px;
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>🎤 Talk2Translate</h1>
 
-  <div>
-    Kaynak Dil:
-    <select id="sourceLang">
-      <option value="tr-TR" data-iso="tr">Türkçe</option>
-      <option value="en-US" data-iso="en">İngilizce</option>
-      <option value="de-DE" data-iso="de">Almanca</option>
-      <option value="fr-FR" data-iso="fr">Fransızca</option>
-      <option value="es-ES" data-iso="es">İspanyolca</option>
-    </select>
-    Hedef Dil:
-    <select id="targetLang">
-      <option value="en">İngilizce</option>
-      <option value="tr">Türkçe</option>
-      <option value="de">Almanca</option>
-      <option value="fr">Fransızca</option>
-      <option value="es">İspanyolca</option>
-    </select>
-  </div>
+<h1>🎤 Talk2Translate</h1>
 
-  <div style="margin: 10px 0;">
-    <button id="startBtn">🎙 Dinlemeyi Başlat</button>
-    <button id="stopBtn" disabled>⏹ Durdur</button>
-    <button id="speakBtn" disabled>🔊 Sesle Oku</button>
-  </div>
+<div>
+  Kaynak Dil:
+  <select id="sourceLang">
+    <option value="tr-TR" data-iso="tr">Türkçe</option>
+    <option value="en-US" data-iso="en">İngilizce</option>
+    <option value="de-DE" data-iso="de">Almanca</option>
+    <option value="fr-FR" data-iso="fr">Fransızca</option>
+    <option value="es-ES" data-iso="es">İspanyolca</option>
+  </select>
 
-  <h3>Algılanan Metin</h3>
-  <div class="box" id="recognizedText">—</div>
-
-  <h3>Çevrilen Metin</h3>
-  <div class="box" id="translatedText">—</div>
-
-  <h3>Manuel Mod</h3>
-  <textarea id="manualInput" placeholder="Metni yazın..."></textarea>
-  <button id="manualTranslateBtn">Çevir</button>
-
-  <div class="diagnostics" id="diagnostics">
-    🔍 Tanılama:<br>
-    - Tarayıcı desteği: kontrol ediliyor...<br>
-    - HTTPS: kontrol ediliyor...<br>
-    - Mikrofon izni: kontrol ediliyor...<br>
-    - Son hata: yok
-  </div>
+  Hedef Dil:
+  <select id="targetLang">
+    <option value="en">İngilizce</option>
+    <option value="tr">Türkçe</option>
+    <option value="de">Almanca</option>
+    <option value="fr">Fransızca</option>
+    <option value="es">İspanyolca</option>
+  </select>
 </div>
+
+<div>
+  <button id="startBtn">🎙 Dinlemeyi Başlat</button>
+  <button id="stopBtn" disabled>⏹ Durdur</button>
+  <button id="speakBtn" disabled>🔊 Sesle Oku</button>
+</div>
+
+<h3>Algılanan Metin</h3>
+<div class="box" id="recognizedText">—</div>
+
+<h3>Çevrilen Metin</h3>
+<div class="box" id="translatedText">—</div>
 
 <script>
 const recognizedText = document.getElementById("recognizedText");
@@ -93,80 +72,47 @@ const translatedText = document.getElementById("translatedText");
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const speakBtn = document.getElementById("speakBtn");
-const manualInput = document.getElementById("manualInput");
-const manualTranslateBtn = document.getElementById("manualTranslateBtn");
 const sourceLang = document.getElementById("sourceLang");
 const targetLang = document.getElementById("targetLang");
-const diagnostics = document.getElementById("diagnostics");
 
 let recognition;
 let lastTranslated = "";
 
-// Tanılama kontrolü
-function updateDiagnostics(status) {
-  diagnostics.innerHTML = `
-    🔍 Tanılama:<br>
-    - Tarayıcı desteği: ${status.sr}<br>
-    - HTTPS: ${status.https}<br>
-    - Mikrofon izni: ${status.mic}<br>
-    - Son hata: ${status.error}
-  `;
-}
-
-function checkDiagnostics(errorMsg = "yok") {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const srSupport = SR ? "✅ Var" : "❌ Yok";
-  const isHttps = location.protocol === "https:" ? "✅ Evet" : "❌ Hayır";
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(() => {
-      updateDiagnostics({ sr: srSupport, https: isHttps, mic: "✅ İzin verildi", error: errorMsg });
-    })
-    .catch(() => {
-      updateDiagnostics({ sr: srSupport, https: isHttps, mic: "❌ İzin yok", error: errorMsg });
-    });
-}
-checkDiagnostics();
-
-// Ses tanıma
 startBtn.addEventListener("click", () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert("Tarayıcınız ses tanımayı desteklemiyor."); checkDiagnostics("Tarayıcı desteklemiyor"); return; }
+  if (!SR) {
+    alert("Tarayıcınız ses tanımayı desteklemiyor.");
+    return;
+  }
+  recognition = new SR();
+  recognition.lang = sourceLang.value;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
 
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(() => {
-      recognition = new SR();
-      recognition.lang = sourceLang.value;
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        recognizedText.textContent = "Dinleniyor...";
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-      };
-      recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
-        recognizedText.textContent = transcript;
-        translateText(transcript, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
-      };
-      recognition.onerror = (e) => {
-        recognizedText.textContent = "Hata: " + e.error;
-        checkDiagnostics(e.error);
-      };
-      recognition.onend = () => {
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-      };
-      recognition.start();
-    })
-    .catch(() => { alert("Mikrofon izni verilmedi."); checkDiagnostics("Mikrofon izni yok"); });
+  recognition.onstart = () => {
+    recognizedText.textContent = "Dinleniyor...";
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  };
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    recognizedText.textContent = transcript;
+    translateText(transcript, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
+  };
+  recognition.onerror = (e) => {
+    recognizedText.textContent = "Hata: " + e.error;
+  };
+  recognition.onend = () => {
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  };
+  recognition.start();
 });
 
 stopBtn.addEventListener("click", () => {
   if (recognition) recognition.stop();
 });
 
-// MyMemory çeviri
 async function translateText(text, sourceISO, targetISO) {
   translatedText.textContent = "Çevriliyor...";
   try {
@@ -176,29 +122,19 @@ async function translateText(text, sourceISO, targetISO) {
     translatedText.textContent = out;
     lastTranslated = out;
     speakBtn.disabled = false;
-    checkDiagnostics();
   } catch {
     translatedText.textContent = "Çeviri hatası!";
     speakBtn.disabled = true;
-    checkDiagnostics("Çeviri hatası");
   }
 }
 
-// Sesle okuma
 speakBtn.addEventListener("click", () => {
   if (!lastTranslated) return;
   const utterance = new SpeechSynthesisUtterance(lastTranslated);
   utterance.lang = targetLang.value;
   speechSynthesis.speak(utterance);
 });
-
-// Manuel mod
-manualTranslateBtn.addEventListener("click", () => {
-  const text = manualInput.value.trim();
-  if (!text) return;
-  recognizedText.textContent = text;
-  translateText(text, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
-});
 </script>
+
 </body>
 </html>
