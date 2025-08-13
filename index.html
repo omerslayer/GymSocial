@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Talk2Translate — Manuel Başlat/Durdur</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talk2Translate</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -64,7 +64,7 @@
 
   <div style="margin: 10px 0;">
     <button id="startBtn">🎙 Dinlemeyi Başlat</button>
-    <button id="stopBtn" disabled>⏹ Durdur ve Çevir</button>
+    <button id="stopBtn" disabled>⏹ Durdur</button>
     <button id="speakBtn" disabled>🔊 Sesle Oku</button>
   </div>
 
@@ -91,13 +91,15 @@ const sourceLang = document.getElementById("sourceLang");
 const targetLang = document.getElementById("targetLang");
 
 let recognition;
-let capturedText = "";
 let lastTranslated = "";
 
-// Dinleme başlat
+// Dinlemeyi başlat
 startBtn.addEventListener("click", () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert("Tarayıcınız ses tanımayı desteklemiyor."); return; }
+  if (!SR) {
+    alert("Tarayıcınız ses tanımayı desteklemiyor.");
+    return;
+  }
 
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(() => {
@@ -108,24 +110,21 @@ startBtn.addEventListener("click", () => {
 
       recognition.onstart = () => {
         recognizedText.textContent = "Dinleniyor...";
-        capturedText = "";
         startBtn.disabled = true;
         stopBtn.disabled = false;
       };
 
       recognition.onresult = (e) => {
-        capturedText = e.results[0][0].transcript;
-        recognizedText.textContent = capturedText;
+        const transcript = e.results[0][0].transcript;
+        recognizedText.textContent = transcript;
+        translateText(transcript, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
       };
 
       recognition.onerror = (e) => {
         recognizedText.textContent = "Hata: " + e.error;
       };
 
-      recognition.onend = () => {
-        startBtn.disabled = false;
-      };
-
+      // Artık otomatik yeniden başlatma yok!
       recognition.start();
     })
     .catch(() => {
@@ -133,14 +132,12 @@ startBtn.addEventListener("click", () => {
     });
 });
 
-// Dinlemeyi durdur ve çevir
+// Dinlemeyi durdur
 stopBtn.addEventListener("click", () => {
   if (recognition) {
     recognition.stop();
+    startBtn.disabled = false;
     stopBtn.disabled = true;
-    if (capturedText.trim() !== "") {
-      translateText(capturedText, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
-    }
   }
 });
 
