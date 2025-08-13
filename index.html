@@ -1,372 +1,634 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Talk2Translate — Vosk (Offline STT) + MyMemory</title>
-<style>
-  :root {
-    --bg1:#0f172a; --bg2:#111827;
-    --glass:rgba(255,255,255,.06);
-    --ink:#e5e7eb; --muted:#9ca3af;
-    --line:rgba(255,255,255,.12);
-    --accent:#ec4899; --accent2:#8b5cf6;
-    --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; font-family:ui-sans-serif,system-ui,Arial;
-    background:linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:var(--ink); display:flex; justify-content:center; padding:24px;
-  }
-  .wrap{width:min(960px,100%)}
-  .card{
-    background:var(--glass); border:1px solid var(--line);
-    border-radius:20px; padding:18px; backdrop-filter:blur(16px);
-    box-shadow:0 10px 30px rgba(0,0,0,.3);
-  }
-  header{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
-  h1{margin:0; font-size:22px}
-  .badges{display:flex; gap:8px; flex-wrap:wrap}
-  .badge{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--line)}
-  .ok{background:rgba(16,185,129,.15)} .warn{background:rgba(245,158,11,.15)} .err{background:rgba(239,68,68,.15)}
-  .controls{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
-  select,button,textarea{
-    border:none; border-radius:12px; padding:10px 12px; font-size:15px;
-    color:var(--ink); background:rgba(255,255,255,.08);
-  }
-  button{cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); font-weight:700}
-  button.secondary{background:rgba(255,255,255,.08); border:1px solid var(--line); font-weight:600}
-  button:disabled{opacity:.55; cursor:not-allowed}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  @media(max-width:860px){.grid{grid-template-columns:1fr}}
-  .box{background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:16px; padding:12px; min-height:120px; display:flex; flex-direction:column}
-  .box h3{margin:0 0 8px; font-size:14px; color:var(--muted)}
-  .view{flex:1; background:rgba(0,0,0,.25); border-radius:12px; padding:10px; overflow:auto; line-height:1.5}
-  textarea{width:100%; resize:vertical; min-height:90px}
-  .bar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px}
-  .progress{
-    width:100%; height:10px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; margin-top:6px;
-  }
-  .progress > span{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%}
-  footer{margin-top:14px; font-size:12px; color:var(--muted); text-align:center}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sporcu Sosyal Platformu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --card: #121822;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --brand: #22d3ee;
+      --brand-2: #60a5fa;
+      --accent: #34d399;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --ring: rgba(34,211,238,0.35);
+      --border: #1f2a37;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(34,211,238,.15), transparent 60%),
+                  radial-gradient(1000px 700px at -10% 20%, rgba(96,165,250,.12), transparent 55%),
+                  var(--bg);
+      color: var(--text); letter-spacing: 0.2px; 
+    }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; }
+
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: rgba(11,15,20,0.75); backdrop-filter: blur(8px); z-index: 50;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 18px; letter-spacing: 0.6px; }
+    .brand .logo { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 6px 20px rgba(34,211,238,.3); }
+    .nav-actions { display: flex; gap: 10px; align-items: center; }
+    .btn { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: #0e141d; color: var(--text); transition: .2s ease; font-weight: 600; }
+    .btn:hover { transform: translateY(-1px); border-color: var(--brand); box-shadow: 0 0 0 4px var(--ring); }
+    .btn.primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #061019; border-color: transparent; }
+
+    /* Auth Cards */
+    .grid-auth { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 60%), var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .card h2 { margin: 0 0 12px; font-size: 22px; }
+    .muted { color: var(--muted); font-size: 13px; }
+
+    .input { width: 100%; padding: 12px 12px; border-radius: 12px; background: #0d131c; border: 1px solid var(--border); color: var(--text); outline: none; transition: .2s border, .2s box-shadow; }
+    .input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--ring); }
+    .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
+    .col-12 { grid-column: span 12; }
+
+    .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
+    .helper { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .range-wrap { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    input[type=range] { width: 100%; accent-color: #22d3ee; }
+
+    .error { color: var(--danger); font-size: 12px; margin-top: 6px; }
+    .success { color: var(--accent); font-size: 13px; }
+
+    /* App */
+    .app { display: none; }
+    .app.show { display: block; }
+
+    .app-grid { display: grid; grid-template-columns: 280px 1fr; gap: 18px; }
+    .sidebar { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; height: calc(100vh - 140px); position: sticky; top: 88px; display: flex; flex-direction: column; }
+    .sidebar h3 { margin: 8px 0 12px; font-size: 14px; color: var(--muted); font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
+    .menu { display: grid; gap: 8px; }
+    .menu button { text-align: left; padding: 10px 12px; border-radius: 12px; background: #0d131c; border: 1px solid var(--border); color: var(--text); font-weight: 600; }
+    .menu button.active, .menu button:hover { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+
+    .content { display: grid; gap: 18px; }
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-2)); display: grid; place-items: center; font-weight: 800; color: #07121a; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; }
+    .stat .kpi { font-size: 22px; font-weight: 800; }
+    .stat .kpi small { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Messaging */
+    .msg-wrap { display: grid; grid-template-columns: 260px 1fr; gap: 14px; }
+    .threads, .chat { background: #0d131c; border: 1px solid var(--border); border-radius: 16px; }
+    .threads { padding: 10px; display: grid; gap: 8px; }
+    .thread { padding: 10px; border-radius: 12px; border: 1px solid var(--border); display: grid; gap: 4px; }
+    .thread:hover, .thread.active { border-color: var(--brand); }
+    .chat { display: grid; grid-template-rows: auto 1fr auto; height: 420px; }
+    .chat-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
+    .chat-body { padding: 14px; overflow: auto; display: grid; gap: 10px; }
+    .bubble { max-width: 70%; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--border); }
+    .bubble.me { margin-left: auto; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #07121a; border-color: transparent; }
+    .chat-input { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 12px; border-top: 1px solid var(--border); }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; background: #0d131c; border: 1px solid var(--border); font-size: 12px; }
+
+    .footer { text-align: center; color: var(--muted); padding: 18px; }
+
+    @media (max-width: 980px) {
+      .grid-auth { grid-template-columns: 1fr; }
+      .app-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .msg-wrap { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <header>
-      <h1>🎤 Talk2Translate</h1>
-      <div class="badges">
-        <span id="httpsBadge" class="badge">HTTPS kontrol...</span>
-        <span id="voskBadge" class="badge">Vosk yükleniyor...</span>
-        <span id="micBadge" class="badge">Mikrofon...</span>
-      </div>
-    </header>
-
-    <div class="controls">
-      <!-- Tanıma dili (Vosk modeli) -->
-      <select id="sourceLang">
-        <option value="tr" data-recog="tr" data-voice="tr-TR" selected>Türkçe</option>
-        <option value="en" data-recog="en" data-voice="en-US">İngilizce</option>
-        <option value="de" data-recog="de" data-voice="de-DE">Almanca</option>
-        <option value="fr" data-recog="fr" data-voice="fr-FR">Fransızca</option>
-        <option value="es" data-recog="es" data-voice="es-ES">İspanyolca</option>
-        <option value="ru" data-recog="ru" data-voice="ru-RU">Rusça</option>
-        <option value="ar" data-recog="ar" data-voice="ar-SA">Arapça</option>
-      </select>
-
-      <!-- Çeviri hedef dili -->
-      <select id="targetLang">
-        <option value="en">İngilizce</option>
-        <option value="tr">Türkçe</option>
-        <option value="de">Almanca</option>
-        <option value="fr">Fransızca</option>
-        <option value="es">İspanyolca</option>
-        <option value="ru">Rusça</option>
-        <option value="ar">Arapça</option>
-      </select>
-
-      <button id="startBtn">Başlat</button>
-      <button id="stopBtn" class="secondary" disabled>Durdur</button>
-      <label title="Çeviri otomatik sesle okunsun mu?"><input type="checkbox" id="autoSpeak" checked> Otomatik Oku</label>
-      <button id="speakBtn" class="secondary" disabled>Oku</button>
+  <nav class="navbar">
+    <div class="brand"><span class="logo"></span> Sporcu Sosyal</div>
+    <div class="nav-actions" id="navAuth">
+      <button class="btn" onclick="showAuth('login')">Giriş</button>
+      <button class="btn primary" onclick="showAuth('signup')">Kayıt Ol</button>
     </div>
-
-    <div class="box">
-      <strong>Model Yükleme Durumu</strong>
-      <div class="progress"><span id="modelProgress"></span></div>
-      <small id="modelStatus" class="muted">Dil seçince ilgili model yüklenir. İlk sefer biraz uzun sürebilir.</small>
+    <div class="nav-actions" id="navUser" style="display:none">
+      <span id="navWelcome" class="muted"></span>
+      <button class="btn" onclick="logout()">Çıkış</button>
     </div>
+  </nav>
 
-    <div class="grid" style="margin-top:14px">
-      <div class="box">
-        <h3>Algılanan</h3>
-        <div id="recognizedText" class="view">—</div>
+  <main class="container">
+    <!-- Auth Section -->
+    <section id="authSection">
+      <div class="grid-auth">
+        <div class="card">
+          <h2>Giriş Yap</h2>
+          <p class="muted">Hesabınıza erişin ve topluluğa katılın.</p>
+          <div class="row">
+            <div class="col-12">
+              <label class="label" for="loginEmail">E‑posta</label>
+              <input class="input" id="loginEmail" type="email" placeholder="ornek@mail.com" />
+            </div>
+            <div class="col-12">
+              <label class="label" for="loginPass">Şifre</label>
+              <input class="input" id="loginPass" type="password" placeholder="••••••••" />
+            </div>
+            <div class="col-12">
+              <button class="btn primary" onclick="login()">Giriş</button>
+              <span id="loginMsg" class="helper"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Kayıt Ol</h2>
+          <p class="muted">Sporcu profilini oluştur ve arkadaşlarınla bağ kur.</p>
+
+          <div class="row">
+            <div class="col-6">
+              <label class="label" for="suName">Ad Soyad</label>
+              <input class="input" id="suName" type="text" placeholder="Adınız Soyadınız" />
+            </div>
+            <div class="col-6">
+              <label class="label" for="suEmail">E‑posta</label>
+              <input class="input" id="suEmail" type="email" placeholder="ornek@mail.com" />
+            </div>
+            <div class="col-6">
+              <label class="label" for="suPass">Şifre</label>
+              <input class="input" id="suPass" type="password" placeholder="En az 6 karakter" />
+            </div>
+            <div class="col-6">
+              <label class="label" for="suAge">Yaş</label>
+              <input class="input" id="suAge" type="number" min="10" max="100" placeholder="18" />
+            </div>
+            <div class="col-6">
+              <label class="label" for="suHeight">Boy (cm)</label>
+              <input class="input" id="suHeight" type="number" min="100" max="250" placeholder="175" />
+            </div>
+            <div class="col-6">
+              <label class="label" for="suWeight">Kilo (kg)</label>
+              <input class="input" id="suWeight" type="number" min="30" max="250" placeholder="75" />
+            </div>
+
+            <div class="col-12"><hr style="border: none; border-top:1px solid var(--border); margin: 8px 0 6px"></div>
+
+            <div class="col-6">
+              <label class="label">Maksimum Bench Press (kg) <span class="muted">0–300</span></label>
+              <div class="range-wrap">
+                <input id="suBench" type="range" min="0" max="300" step="5" value="60" />
+                <span class="pill" id="suBenchVal">60 kg</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="label">Maksimum Squat (kg) <span class="muted">0–300</span></label>
+              <div class="range-wrap">
+                <input id="suSquat" type="range" min="0" max="300" step="5" value="80" />
+                <span class="pill" id="suSquatVal">80 kg</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="label">Maksimum Şınav <span class="muted">0–200</span></label>
+              <div class="range-wrap">
+                <input id="suPushups" type="range" min="0" max="200" step="1" value="30" />
+                <span class="pill" id="suPushupsVal">30</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="label">Maksimum Barfiks <span class="muted">0–70</span></label>
+              <div class="range-wrap">
+                <input id="suPullups" type="range" min="0" max="70" step="1" value="8" />
+                <span class="pill" id="suPullupsVal">8</span>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <button class="btn primary" onclick="signup()">Hesap Oluştur</button>
+              <div id="signupMsg" class="helper"></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="box">
-        <h3>Çevrilen</h3>
-        <div id="translatedText" class="view">—</div>
+    </section>
+
+    <!-- App Section -->
+    <section id="appSection" class="app">
+      <div class="app-grid">
+        <aside class="sidebar">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="avatar" id="sideAvatar">U</div>
+            <div>
+              <div id="sideName" style="font-weight:800;">Kullanıcı</div>
+              <div class="muted" id="sideEmail">mail</div>
+            </div>
+          </div>
+          <h3>Menü</h3>
+          <div class="menu">
+            <button class="active" data-view="dashboard" onclick="switchView('dashboard', this)">Gösterge Paneli</button>
+            <button data-view="directory" onclick="switchView('directory', this)">Kullanıcılar</button>
+            <button data-view="messages" onclick="switchView('messages', this)">Mesajlar</button>
+            <button data-view="profile" onclick="switchView('profile', this)">Profilim</button>
+          </div>
+          <div style="margin-top:auto;">
+            <h3>İpuçları</h3>
+            <p class="muted" style="font-size:12px">Bu demo yerel olarak çalışır. Verileriniz bu tarayıcıda <strong>localStorage</strong> içinde tutulur.</p>
+          </div>
+        </aside>
+
+        <div class="content">
+          <div class="header">
+            <h1 id="viewTitle" style="margin:0;font-size:24px">Gösterge Paneli</h1>
+            <div class="pill" id="bmiPill">BMI: —</div>
+          </div>
+
+          <!-- Dashboard -->
+          <div id="view-dashboard">
+            <div class="stats">
+              <div class="stat">
+                <div class="muted">Maks Bench</div>
+                <div class="kpi" id="statBench">— <small>kg</small></div>
+              </div>
+              <div class="stat">
+                <div class="muted">Maks Squat</div>
+                <div class="kpi" id="statSquat">— <small>kg</small></div>
+              </div>
+              <div class="stat">
+                <div class="muted">Maks Şınav</div>
+                <div class="kpi" id="statPushups">—</div>
+              </div>
+              <div class="stat">
+                <div class="muted">Maks Barfiks</div>
+                <div class="kpi" id="statPullups">—</div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top:14px;">
+              <div class="panel">
+                <h3 style="margin:0 0 10px;">Güç İndeksi</h3>
+                <p class="muted" style="margin-top:0">Basit bir skor: (Bench + Squat) + (Şınav*0.5 + Barfiks*1.5)</p>
+                <div class="kpi" id="powerScore">—</div>
+              </div>
+              <div class="panel">
+                <h3 style="margin:0 0 10px;">Topluluk Özetleri</h3>
+                <table class="table" id="communityStats">
+                  <thead>
+                    <tr><th>Metri̇k</th><th>Ortalama</th><th>Maksimum</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Directory -->
+          <div id="view-directory" style="display:none;">
+            <div class="panel">
+              <div class="row">
+                <div class="col-9">
+                  <input id="userSearch" class="input" placeholder="Kullanıcı veya e‑posta ara…" oninput="renderDirectory()" />
+                </div>
+                <div class="col-3">
+                  <button class="btn" style="width:100%" onclick="seedUsers()">Örnek Kullanıcı Ekle</button>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <table class="table" id="directoryTable">
+                <thead>
+                  <tr>
+                    <th>Ad</th><th>E‑posta</th><th>Yaş</th><th>Bench</th><th>Squat</th><th>Şınav</th><th>Barfiks</th><th>Aksiyon</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div id="view-messages" style="display:none;">
+            <div class="msg-wrap">
+              <div class="threads" id="threads"></div>
+              <div class="chat">
+                <div class="chat-header"><div class="avatar" id="chatAvatar">?</div><div>
+                  <div id="chatName" style="font-weight:800;">Bir kullanıcı seçin</div>
+                  <div id="chatEmail" class="muted" style="font-size:12px;">—</div>
+                </div></div>
+                <div class="chat-body" id="chatBody"></div>
+                <div class="chat-input">
+                  <input id="chatText" class="input" placeholder="Mesaj yaz…" onkeydown="if(event.key==='Enter') sendMessage()" />
+                  <button class="btn primary" onclick="sendMessage()">Gönder</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profile -->
+          <div id="view-profile" style="display:none;">
+            <div class="panel">
+              <h3>Profil Bilgileri</h3>
+              <div class="row">
+                <div class="col-6">
+                  <label class="label">Ad Soyad</label>
+                  <input class="input" id="pName" />
+                </div>
+                <div class="col-6">
+                  <label class="label">E‑posta (değiştirilemez)</label>
+                  <input class="input" id="pEmail" disabled />
+                </div>
+                <div class="col-4">
+                  <label class="label">Yaş</label>
+                  <input class="input" id="pAge" type="number" min="10" max="100" />
+                </div>
+                <div class="col-4">
+                  <label class="label">Boy (cm)</label>
+                  <input class="input" id="pHeight" type="number" min="100" max="250" />
+                </div>
+                <div class="col-4">
+                  <label class="label">Kilo (kg)</label>
+                  <input class="input" id="pWeight" type="number" min="30" max="250" />
+                </div>
+
+                <div class="col-6">
+                  <label class="label">Maks Bench (0–300)</label>
+                  <div class="range-wrap"><input id="pBench" type="range" min="0" max="300" step="5"><span class="pill" id="pBenchVal"></span></div>
+                </div>
+                <div class="col-6">
+                  <label class="label">Maks Squat (0–300)</label>
+                  <div class="range-wrap"><input id="pSquat" type="range" min="0" max="300" step="5"><span class="pill" id="pSquatVal"></span></div>
+                </div>
+                <div class="col-6">
+                  <label class="label">Maks Şınav (0–200)</label>
+                  <div class="range-wrap"><input id="pPushups" type="range" min="0" max="200" step="1"><span class="pill" id="pPushupsVal"></span></div>
+                </div>
+                <div class="col-6">
+                  <label class="label">Maks Barfiks (0–70)</label>
+                  <div class="range-wrap"><input id="pPullups" type="range" min="0" max="70" step="1"><span class="pill" id="pPullupsVal"></span></div>
+                </div>
+
+                <div class="col-12">
+                  <button class="btn primary" onclick="saveProfile()">Kaydet</button>
+                  <span id="profileMsg" class="success" style="display:none">Kaydedildi ✔</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
-    </div>
 
-    <div class="box" style="margin-top:14px">
-      <h3>Manuel Mod</h3>
-      <textarea id="manualInput" placeholder="Metni yaz..."></textarea>
-      <div class="bar">
-        <button id="manualTranslateBtn">Çevir</button>
-        <span id="lastError" class="badge">Son hata: yok</span>
-      </div>
-    </div>
+      <div class="footer">© 2025 Sporcu Sosyal – Demo</div>
+    </section>
+  </main>
 
-    <footer>Ses tanıma: Vosk (tarayıcı içinde, offline) • Çeviri: MyMemory (ücretsiz) • En iyi deneyim için HTTPS + Chrome/Edge</footer>
-  </div>
-</div>
+  <script>
+    // ===== Utilities & Storage Layer =====
+    const LS_USERS = 'sportapp_users';
+    const LS_SESSION = 'sportapp_session';
+    const LS_MESSAGES = 'sportapp_messages';
 
-<!-- Vosk Browser (UMD) -->
-<script src="https://unpkg.com/vosk-browser/dist/umd/index.js"></script>
+    const $ = (sel) => document.querySelector(sel);
+    const $all = (sel) => Array.from(document.querySelectorAll(sel));
 
-<script>
-/* ---------- UI Elemanları ---------- */
-const recognizedEl = document.getElementById('recognizedText');
-const translatedEl = document.getElementById('translatedText');
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const speakBtn = document.getElementById('speakBtn');
-const autoSpeak = document.getElementById('autoSpeak');
-const manualInput = document.getElementById('manualInput');
-const manualTranslateBtn = document.getElementById('manualTranslateBtn');
-const sourceSel = document.getElementById('sourceLang');
-const targetSel = document.getElementById('targetLang');
-const httpsBadge = document.getElementById('httpsBadge');
-const voskBadge = document.getElementById('voskBadge');
-const micBadge = document.getElementById('micBadge');
-const lastErrorEl = document.getElementById('lastError');
-const modelProgress = document.getElementById('modelProgress');
-const modelStatus = document.getElementById('modelStatus');
+    const read = (k, fallback) => JSON.parse(localStorage.getItem(k) || JSON.stringify(fallback));
+    const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
-const setBadge = (el, text, cls) => { el.className = `badge ${cls||''}`; el.textContent = text; };
-const setError = (msg) => lastErrorEl.textContent = `Son hata: ${msg}`;
-const isHttps = location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname);
-setBadge(httpsBadge, isHttps ? 'HTTPS ✔' : 'HTTPS önerilir', isHttps ? 'ok' : 'warn');
+    function uid() { return 'u_' + Math.random().toString(36).slice(2, 10); }
 
-/* ---------- Vosk Kurulum ---------- */
-/*
-  MODEL URL HARİTASI:
-  Bu URL'leri kendi GitHub Pages’ine göre düzenle.
-  Örn: https://kullaniciadi.github.io/repo-adi/models/tr/
-  İlk test için sadece tr ve en klasörlerini yüklemen yeterli.
-*/
-const MODEL_BASES = {
-  tr: '/models/tr/',  // Türkçe modeli koyacağın klasör
-  en: '/models/en/',
-  de: '/models/de/',
-  fr: '/models/fr/',
-  es: '/models/es/',
-  ru: '/models/ru/',
-  ar: '/models/ar/'
-};
-
-let AudioContextCls = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-let mediaStream = null;
-let mediaNode = null;
-let recognizer = null;
-let model = null;
-let currentLang = null;
-let running = false;
-let targetSampleRate = 16000; // Vosk için önerilen
-
-// Basit downsample: Float32(0..1) -> Int16(-32768..32767) @16kHz
-function downsampleTo16k(inputBuffer, sourceRate){
-  if (sourceRate === targetSampleRate) {
-    const out = new Int16Array(inputBuffer.length);
-    for (let i=0;i<inputBuffer.length;i++){
-      let s = Math.max(-1, Math.min(1, inputBuffer[i]));
-      out[i] = s<0 ? s*0x8000 : s*0x7FFF;
+    function validateLimits(user) {
+      const errs = [];
+      const within = (val, min, max, label) => { if (isNaN(val) || val < min || val > max) errs.push(`${label} ${min}–${max} aralığında olmalı`); };
+      within(user.age, 10, 100, 'Yaş');
+      within(user.height, 100, 250, 'Boy');
+      within(user.weight, 30, 250, 'Kilo');
+      within(user.bench, 0, 300, 'Bench');
+      within(user.squat, 0, 300, 'Squat');
+      within(user.pushups, 0, 200, 'Şınav');
+      within(user.pullups, 0, 70, 'Barfiks');
+      return errs;
     }
-    return out;
-  }
-  const ratio = sourceRate / targetSampleRate;
-  const newLen = Math.round(inputBuffer.length / ratio);
-  const out = new Int16Array(newLen);
-  let idx=0, acc=0;
-  for (let i=0;i<newLen;i++){
-    const start = Math.round(i*ratio);
-    const end = Math.round((i+1)*ratio);
-    acc = 0;
-    for (let j=start;j<end && j<inputBuffer.length;j++){ acc += inputBuffer[j]; }
-    const avg = acc / Math.max(1, end-start);
-    let s = Math.max(-1, Math.min(1, avg));
-    out[i] = s<0 ? s*0x8000 : s*0x7FFF;
-  }
-  return out;
-}
 
-async function ensureModel(langKey){
-  if (currentLang === langKey && model) return;
-  currentLang = langKey;
-  model = null;
-  recognizer = null;
-  setBadge(voskBadge, `Model yükleniyor (${langKey})...`, 'warn');
-  modelStatus.textContent = 'Dosyalar indiriliyor, ilk sefer uzun sürebilir...';
+    function calcBMI(user){
+      if(!user.height || !user.weight) return null;
+      const h = user.height / 100;
+      return +(user.weight / (h*h)).toFixed(1);
+    }
 
-  const { Vosk } = window;
-  // Vosk modülünü indirirken progress göstergesi:
-  Vosk.setLogLevel(0);
+    function powerIndex(user){
+      const score = (user.bench + user.squat) + (user.pushups*0.5 + user.pullups*1.5);
+      return Math.round(score);
+    }
 
-  // Modeli oluştur
-  const baseUrl = MODEL_BASES[langKey];
-  if (!baseUrl) { setBadge(voskBadge, 'Dil modeli yok', 'err'); throw new Error('Model URL bulunamadı'); }
+    function seedUsers(){
+      const users = read(LS_USERS, []);
+      const samples = [
+        {name:'Ali Koç', email:'ali@example.com', password:'123456', age:28, height:180, weight:82, bench:120, squat:160, pushups:55, pullups:15},
+        {name:'Ayşe Yılmaz', email:'ayse@example.com', password:'123456', age:24, height:168, weight:60, bench:65, squat:100, pushups:40, pullups:7},
+        {name:'Mehmet Demir', email:'mehmet@example.com', password:'123456', age:32, height:175, weight:78, bench:110, squat:150, pushups:60, pullups:12},
+        {name:'Ece Kaya', email:'ece@example.com', password:'123456', age:21, height:162, weight:54, bench:45, squat:85, pushups:35, pullups:6}
+      ];
+      samples.forEach(s => { if(!users.find(u=>u.email===s.email)){ users.push({...s, id: uid()}); }});
+      write(LS_USERS, users);
+      renderDirectory();
+      alert('4 örnek kullanıcı eklendi.');
+    }
 
-  // Not: vosk-browser UMD API
-  const modelInstance = await Vosk.createModel(baseUrl, (p) => {
-    // p: { loaded, total }  — bazı paketlerde total bilinmeyebilir
-    const percent = p.total ? Math.round((p.loaded / p.total) * 100) : Math.min(99, Math.round(p.loaded/500000));
-    modelProgress.style.width = (percent || 0) + '%';
-  });
-
-  model = modelInstance;
-  setBadge(voskBadge, `Model hazır (${langKey}) ✔`, 'ok');
-  modelStatus.textContent = 'Model yüklendi. Mikrofonu başlatıp konuşabilirsiniz.';
-  modelProgress.style.width = '100%';
-}
-
-async function createRecognizer(){
-  if (!model) throw new Error('Model henüz hazır değil');
-  recognizer = new model.KaldiRecognizer(targetSampleRate);
-  recognizer.setWords(true);
-}
-
-/* ---------- Çeviri (MyMemory) ---------- */
-async function translateText(text, sourceISO, targetISO) {
-  translatedEl.textContent = 'Çevriliyor...';
-  try {
-    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceISO}|${targetISO}`);
-    const data = await res.json();
-    const out = data?.responseData?.translatedText || '';
-    if (!out) throw new Error('Boş çeviri');
-    translatedEl.textContent = out;
-    lastTranslated = out;
-    speakBtn.disabled = false;
-    setError('yok');
-    if (autoSpeak.checked) speakNow();
-  } catch(e) {
-    translatedEl.textContent = 'Çeviri hatası!';
-    speakBtn.disabled = true;
-    setError(e.message || 'Çeviri hatası');
-  }
-}
-
-/* ---------- Sesli Okuma ---------- */
-let lastTranslated = '';
-function speakNow(){
-  if (!lastTranslated) return;
-  const tgtVoice = targetSel.value; // en, tr, de...
-  // tarayıcı ses motoru için kabaca dil ayarı (her dilde tüm sesler garantili değildir)
-  const u = new SpeechSynthesisUtterance(lastTranslated);
-  // Basit eşleşme:
-  const voiceMap = { tr:'tr-TR', en:'en-US', de:'de-DE', fr:'fr-FR', es:'es-ES', ru:'ru-RU', ar:'ar-SA' };
-  u.lang = voiceMap[tgtVoice] || 'en-US';
-  speechSynthesis.speak(u);
-}
-speakBtn.addEventListener('click', speakNow);
-
-/* ---------- Manuel Mod ---------- */
-manualTranslateBtn.addEventListener('click', ()=>{
-  const text = manualInput.value.trim();
-  if (!text) return;
-  recognizedEl.textContent = text;
-  const srcISO = sourceSel.value;      // tr, en, ...
-  const tgtISO = targetSel.value;      // tr, en, ...
-  translateText(text, srcISO, tgtISO);
-});
-
-/* ---------- Mikrofon + Vosk Akışı ---------- */
-async function startListening(){
-  if (running) return;
-  running = true;
-
-  // Modeli dil seçimine göre hazırla
-  const langKey = sourceSel.value; // tr, en, ...
-  await ensureModel(langKey);
-  await createRecognizer();
-
-  // Mikrofon
-  try{
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    setBadge(micBadge,'Mikrofon ✔','ok');
-  }catch(err){
-    setBadge(micBadge,'Mikrofon yok','err');
-    setError('Mikrofon izni yok');
-    running = false;
-    return;
-  }
-
-  if (!audioCtx) audioCtx = new AudioContextCls({ sampleRate: 48000 }); // çoğu cihazda 44.1k/48k
-  const source = audioCtx.createMediaStreamSource(mediaStream);
-
-  // ScriptProcessorNode ile örnekleri al (deprecated ama yaygın destekli)
-  const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-  processor.onaudioprocess = (e) => {
-    if (!running || !recognizer) return;
-    const input = e.inputBuffer.getChannelData(0); // Float32
-    const pcm16 = downsampleTo16k(input, audioCtx.sampleRate); // Int16
-    // Vosk: acceptWaveform expects Int16Array
-    const res = recognizer.acceptWaveform(pcm16);
-    if (res) {
-      const r = recognizer.result(); // { text, result? }
-      if (r && r.text) {
-        recognizedEl.textContent = r.text;
-        // Çeviriyi tetikle
-        const srcISO = sourceSel.value;  // tr,en,...
-        const tgtISO = targetSel.value;
-        translateText(r.text, srcISO, tgtISO);
+    // ===== Auth =====
+    function showAuth(which){
+      window.scrollTo(0,0);
+      $('#authSection').style.display = 'block';
+      $('#appSection').classList.remove('show');
+      if(which==='signup'){
+        document.getElementById('suName').focus();
+      } else {
+        document.getElementById('loginEmail').focus();
       }
-    } else {
-      const p = recognizer.partialResult(); // { partial }
-      if (p && p.partial) {
-        recognizedEl.textContent = p.partial + ' …';
-      }
     }
-  };
 
-  source.connect(processor);
-  processor.connect(audioCtx.destination); // iOS için gerekebilir, ses çıkmıyor ama node'u canlı tutar
+    function signup(){
+      const user = {
+        id: uid(),
+        name: $('#suName').value.trim(),
+        email: $('#suEmail').value.trim().toLowerCase(),
+        password: $('#suPass').value,
+        age: +$('#suAge').value,
+        height: +$('#suHeight').value,
+        weight: +$('#suWeight').value,
+        bench: +$('#suBench').value,
+        squat: +$('#suSquat').value,
+        pushups: +$('#suPushups').value,
+        pullups: +$('#suPullups').value,
+        createdAt: Date.now()
+      };
 
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
-}
+      const errs = [];
+      if(!user.name) errs.push('Ad Soyad gerekli');
+      if(!user.email || !user.email.includes('@')) errs.push('Geçerli e‑posta girin');
+      if(!user.password || user.password.length < 6) errs.push('Şifre en az 6 karakter');
+      errs.push(...validateLimits(user));
 
-function stopListening(){
-  running = false;
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t=>t.stop());
-    mediaStream = null;
-  }
-  if (recognizer) {
-    const finalRes = recognizer.finalResult();
-    if (finalRes && finalRes.text) {
-      recognizedEl.textContent = finalRes.text;
+      const users = read(LS_USERS, []);
+      if(users.some(u=>u.email===user.email)) errs.push('Bu e‑posta zaten kayıtlı');
+
+      const msg = $('#signupMsg');
+      if(errs.length){ msg.innerHTML = '<span class="error">'+errs.join('<br>')+'</span>'; return; }
+
+      users.push(user); write(LS_USERS, users); write(LS_SESSION, {id:user.id});
+      msg.innerHTML = '<span class="success">Kayıt başarıyla oluşturuldu. Yönlendiriliyorsunuz…</span>';
+      setTimeout(()=> initApp(), 400);
     }
-  }
-}
 
-/* ---------- Olaylar ---------- */
-startBtn.addEventListener('click', startListening);
-stopBtn.addEventListener('click', stopListening);
+    function login(){
+      const email = $('#loginEmail').value.trim().toLowerCase();
+      const pass = $('#loginPass').value;
+      const users = read(LS_USERS, []);
+      const user = users.find(u=>u.email===email && u.password===pass);
+      const msg = $('#loginMsg');
+      if(!user){ msg.innerHTML = '<span class="error">E‑posta veya şifre hatalı</span>'; return; }
+      write(LS_SESSION, {id:user.id});
+      msg.textContent = 'Başarılı, giriş yapılıyor…';
+      setTimeout(()=> initApp(), 300);
+    }
 
-/* ---------- Başlangıç Rozetleri ---------- */
-(async ()=>{
-  try{
-    await navigator.mediaDevices.getUserMedia({audio:true});
-    setBadge(micBadge,'Mikrofon ✔','ok');
-  }catch{ setBadge(micBadge,'Mikrofon yok','err'); }
-  setBadge(voskBadge,'Dil seç → Model yüklensin','warn');
-})();
-</script>
-</body>
-</html>
+    function logout(){ localStorage.removeItem(LS_SESSION); showAuth('login'); $('#navAuth').style.display='flex'; $('#navUser').style.display='none'; }
+
+    // ===== App Init & Views =====
+    function initApp(){
+      const session = read(LS_SESSION, null);
+      const users = read(LS_USERS, []);
+      if(!session){ showAuth('login'); return; }
+      const me = users.find(u=>u.id===session.id);
+      if(!me){ showAuth('login'); return; }
+
+      // Nav
+      $('#navAuth').style.display = 'none';
+      $('#navUser').style.display = 'flex';
+      $('#navWelcome').textContent = 'Merhaba, ' + me.name.split(' ')[0];
+
+      // Switch to app
+      $('#authSection').style.display = 'none';
+      $('#appSection').classList.add('show');
+
+      // Sidebar header
+      $('#sideAvatar').textContent = (me.name[0]||'?').toUpperCase();
+      $('#sideName').textContent = me.name; $('#sideEmail').textContent = me.email;
+
+      // Dashboard stats
+      $('#statBench').innerHTML = me.bench + ' <small>kg</small>';
+      $('#statSquat').innerHTML = me.squat + ' <small>kg</small>';
+      $('#statPushups').textContent = me.pushups;
+      $('#statPullups').textContent = me.pullups;
+      const bmi = calcBMI(me); $('#bmiPill').textContent = 'BMI: ' + (bmi || '—');
+      $('#powerScore').textContent = powerIndex(me);
+
+      // Community stats
+      renderCommunityStats();
+
+      // Directory & Messages
+      renderDirectory();
+      renderThreads();
+
+      // Profile load
+      loadProfile(me);
+
+      // Default view
+      switchView('dashboard');
+    }
+
+    function switchView(view, btn){
+      $all('[id^=view-]').forEach(el=> el.style.display='none');
+      $('#view-' + view).style.display = 'block';
+      $('#viewTitle').textContent = ({dashboard:'Gösterge Paneli', directory:'Kullanıcılar', messages:'Mesajlar', profile:'Profilim'})[view] || '';
+      if(btn){ $all('.menu button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+    }
+
+    function renderCommunityStats(){
+      const users = read(LS_USERS, []);
+      if(users.length===0) return;
+      const avg = (arr)=> Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+      const max = (arr)=> Math.max(...arr);
+      const metrics = [
+        ['Bench (kg)', avg(users.map(u=>u.bench)), max(users.map(u=>u.bench))],
+        ['Squat (kg)', avg(users.map(u=>u.squat)), max(users.map(u=>u.squat))],
+        ['Şınav', avg(users.map(u=>u.pushups)), max(users.map(u=>u.pushups))],
+        ['Barfiks', avg(users.map(u=>u.pullups)), max(users.map(u=>u.pullups))],
+        ['Güç İndeksi', avg(users.map(powerIndex)), max(users.map(powerIndex))],
+      ];
+      const tbody = $('#communityStats tbody');
+      tbody.innerHTML = metrics.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    }
+
+    // ===== Directory =====
+    function renderDirectory(){
+      const users = read(LS_USERS, []);
+      const session = read(LS_SESSION, null);
+      const meId = session?.id;
+      const q = ($('#userSearch')?.value || '').toLowerCase();
+      const filtered = users.filter(u=> (u.id!==meId) && (u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)));
+      const tbody = $('#directoryTable tbody');
+      if(!tbody) return;
+      tbody.innerHTML = filtered.map(u=>`
+        <tr>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td>${u.age}</td>
+          <td>${u.bench} kg</td>
+          <td>${u.squat} kg</td>
+          <td>${u.pushups}</td>
+          <td>${u.pullups}</td>
+          <td><button class="btn" onclick="openChat('${u.id}')">Mesaj</button></td>
+        </tr>
+      `).join('');
+    }
+
+    // ===== Messaging =====
+    function getMessages(){ return read(LS_MESSAGES, {}); }
+    function setMessages(m){ write(LS_MESSAGES, m); }
+
+    function convoKey(a,b){ return [a,b].sort().join('__'); }
+
+    function renderThreads(){
+      const users = read(LS_USERS, []);
+      const session = read(LS_SESSION, null); if(!session) return;
+      const me = users.find(u=>u.id===session.id);
+      const others = users.filter(u=>u.id!==me.id);
+      const wrap = $('#threads'); if(!wrap) return;
+      wrap.innerHTML = '';
+      others.forEach(u=>{
+        const key = convoKey(me.id, u.id);
+        const msgs = getMessages()[key] || [];
+        const last = msgs[msgs.length-1];
+        const el = document.createElement('div');
+        el.className = 'thread';
+        el.onclick = ()=> openChat(u.id);
+        el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar">${u.name[0].toUpperCase()}</div>
+          <div>
+            <div style="font-weight:700">${u.name}</div>
+            <div class="muted" style="font-size:12px">${last ? (last.from===me.id ? 'Sen: ' : '') + last.text : 'Henüz mesaj yok'}</div>
+          </div>
+        </div>`;
+        wrap.appendChild(el);
+      });
+    }
+
+    let activeChatUserId = null;
+
+    function openChat(userId){
+      switchV
