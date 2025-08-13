@@ -7,25 +7,23 @@
 <style>
   :root {
     --bg1:#0f172a; --bg2:#1e293b; --glass:rgba(255,255,255,.08);
-    --text:#f1f5f9; --muted:#94a3b8; --accent:#ec4899; --ok:#10b981; --warn:#fbbf24; --err:#ef4444;
+    --text:#f1f5f9; --muted:#94a3b8; --accent:#ec4899;
     --line:rgba(255,255,255,.12);
   }
   *{box-sizing:border-box}
-  body {
-    margin:0; font-family:sans-serif;
+  body {margin:0;font-family:sans-serif;
     background:linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:var(--text); display:flex;justify-content:center;padding:20px;
-  }
+    color:var(--text);display:flex;justify-content:center;padding:20px;}
   .wrap {width:min(900px,100%)}
-  .card {
-    background:var(--glass); border:1px solid var(--line);
-    border-radius:18px; padding:18px; backdrop-filter:blur(16px);
-  }
+  .card {background:var(--glass);border:1px solid var(--line);
+    border-radius:18px;padding:18px;backdrop-filter:blur(16px);}
   header{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
   h1{margin:0;font-size:22px}
   .badges{display:flex;gap:6px;flex-wrap:wrap}
   .badge{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line)}
-  .ok{background:rgba(16,185,129,.15)}.warn{background:rgba(251,191,36,.15)}.err{background:rgba(239,68,68,.15)}
+  .ok{background:rgba(16,185,129,.15)}
+  .warn{background:rgba(251,191,36,.15)}
+  .err{background:rgba(239,68,68,.15)}
   .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   select,button,textarea{border:none;border-radius:12px;padding:10px;font-size:15px;color:var(--text);background:rgba(255,255,255,.09)}
   button{cursor:pointer;background:linear-gradient(135deg,var(--accent),#8b5cf6);font-weight:600}
@@ -60,6 +58,8 @@
         <option value="de-DE" data-iso="de">Almanca</option>
         <option value="fr-FR" data-iso="fr">Fransızca</option>
         <option value="es-ES" data-iso="es">İspanyolca</option>
+        <option value="ru-RU" data-iso="ru">Rusça</option>
+        <option value="ar-SA" data-iso="ar">Arapça</option>
       </select>
       <select id="targetLang">
         <option value="en">İngilizce</option>
@@ -67,6 +67,8 @@
         <option value="de">Almanca</option>
         <option value="fr">Fransızca</option>
         <option value="es">İspanyolca</option>
+        <option value="ru">Rusça</option>
+        <option value="ar">Arapça</option>
       </select>
       <button id="startBtn">Başlat</button>
       <button id="stopBtn" class="secondary" disabled>Durdur</button>
@@ -167,20 +169,24 @@ startBtn.addEventListener('click', async ()=>{
   recognition.lang = sourceSel.value;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
+  recognition.continuous = false; // Android uyumu
 
   recognition.onstart = () => {
+    console.log('🎤 Dinleme başladı, dil:', recognition.lang);
     recognizedEl.textContent = 'Dinleniyor...';
     startBtn.disabled = true;
     stopBtn.disabled = false;
     silenceTimer = setTimeout(()=>recognition.stop(), 5000);
   };
   recognition.onspeechend = () => {
+    console.log('🛑 Konuşma sona erdi');
     clearTimeout(silenceTimer);
     recognition.stop();
   };
   recognition.onresult = (e) => {
     clearTimeout(silenceTimer);
     const transcript = e.results[0][0].transcript.trim();
+    console.log('📜 Algılanan metin:', transcript);
     if (transcript) {
       recognizedEl.textContent = transcript;
       translateText(transcript, sourceSel.selectedOptions[0].dataset.iso, targetSel.value);
@@ -191,10 +197,12 @@ startBtn.addEventListener('click', async ()=>{
   };
   recognition.onerror = (e) => {
     clearTimeout(silenceTimer);
+    console.error('❌ Hata:', e.error);
     recognizedEl.textContent = `Hata: ${e.error}`;
     setError(e.error);
   };
   recognition.onend = () => {
+    console.log('🔚 Dinleme sona erdi');
     clearTimeout(silenceTimer);
     startBtn.disabled = false;
     stopBtn.disabled = true;
