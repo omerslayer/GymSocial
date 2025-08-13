@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Talk2Translate — Web Speech + MyMemory</title>
+<title>Talk2Translate — Canlı Çeviri</title>
+<meta name="color-scheme" content="dark light" />
 <style>
   :root{
     --bg1:#0b1220; --bg2:#111827;
@@ -12,42 +13,49 @@
     --accent:#ec4899; --accent2:#8b5cf6;
     --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
   }
-  *{box-sizing:border-box} html,body{height:100%}
+  *{box-sizing:border-box}
+  html,body{height:100%}
   body{
-    margin:0; font-family:ui-sans-serif,system-ui,Arial;
+    margin:0; font-family:ui-sans-serif,system-ui,Arial,Segoe UI,Roboto;
     background:radial-gradient(1200px 600px at 10% 0%,#1e293b 0%,transparent 60%),
                radial-gradient(1200px 600px at 100% 0%,#0ea5e9 0%,transparent 50%),
                linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:var(--ink); display:flex; justify-content:center; padding:24px;
+    color:var(--ink); display:flex; justify-content:center; padding:22px;
   }
-  .wrap{width:min(960px,100%)}
+  .wrap{width:min(980px,100%)}
   .card{
-    background:var(--glass); border:1px solid var(--line); border-radius:20px; padding:18px;
-    backdrop-filter:blur(16px); box-shadow:0 10px 30px rgba(0,0,0,.35);
+    background:var(--glass); border:1px solid var(--line); border-radius:22px; padding:18px 18px 16px;
+    backdrop-filter:blur(16px); box-shadow:0 12px 32px rgba(0,0,0,.35);
   }
   header{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
-  h1{margin:0; font-size:22px}
+  h1{margin:0; font-size:22px; letter-spacing:.3px}
   .badges{display:flex; gap:8px; flex-wrap:wrap}
   .badge{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.08)}
-  .ok{background:rgba(16,185,129,.15)} .warn{background:rgba(245,158,11,.15)} .err{background:rgba(239,68,68,.15)}
+  .ok{background:rgba(16,185,129,.16)} .warn{background:rgba(245,158,11,.16)} .err{background:rgba(239,68,68,.16)}
   .controls{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  select,button,textarea,input[type="checkbox"]{accent-color:var(--accent)}
   select,button,textarea{
     border:none; border-radius:12px; padding:10px 12px; font-size:15px;
     color:var(--ink); background:rgba(255,255,255,.08);
   }
-  button{cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); font-weight:700}
+  button{
+    cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); font-weight:700;
+    border:0; transition:filter .15s ease, transform .02s;
+  }
   button.secondary{background:rgba(255,255,255,.08); border:1px solid var(--line); font-weight:600}
   button:disabled{opacity:.55; cursor:not-allowed}
+  button:active{transform:translateY(1px)}
+  .pill{padding:8px 12px; border-radius:999px; border:1px dashed var(--line); font-size:13px; display:flex; align-items:center; gap:8px}
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
   @media(max-width:860px){.grid{grid-template-columns:1fr}}
   .box{background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:16px; padding:12px; min-height:120px; display:flex; flex-direction:column}
   .box h3{margin:0 0 8px; font-size:14px; color:var(--muted)}
-  .view{flex:1; background:rgba(0,0,0,.25); border-radius:12px; padding:10px; overflow:auto; line-height:1.55}
+  .view{flex:1; background:rgba(0,0,0,.25); border-radius:12px; padding:10px; overflow:auto; line-height:1.55; word-wrap:break-word; white-space:pre-wrap}
   textarea{width:100%; resize:vertical; min-height:90px}
   .bar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px}
-  .diag{margin-top:10px; font-size:13px; color:var(--muted); line-height:1.5}
-  footer{margin-top:14px; font-size:12px; color:var(--muted); text-align:center}
-  .pill{padding:6px 10px; border-radius:999px; border:1px dashed var(--line); font-size:12px}
+  .diag{margin-top:12px; font-size:13px; color:var(--muted); line-height:1.5}
+  footer{margin-top:12px; font-size:12px; color:var(--muted); text-align:center}
+  .sr-only{position:absolute;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -57,13 +65,13 @@
       <h1>🎤 Talk2Translate</h1>
       <div class="badges">
         <span id="httpsBadge" class="badge">HTTPS kontrol...</span>
-        <span id="srBadge" class="badge">Tanıma hazırlık...</span>
+        <span id="srBadge" class="badge">Tanıma hazırlanıyor...</span>
         <span id="micBadge" class="badge">Mikrofon...</span>
       </div>
     </header>
 
-    <div class="controls">
-      <!-- Kaynak (tanınacak) dil -->
+    <div class="controls" role="group" aria-label="Kontroller">
+      <label class="sr-only" for="sourceLang">Kaynak Dil</label>
       <select id="sourceLang">
         <option value="tr-TR" data-iso="tr" selected>Türkçe</option>
         <option value="en-US" data-iso="en">İngilizce</option>
@@ -74,7 +82,7 @@
         <option value="ar-SA" data-iso="ar">Arapça</option>
       </select>
 
-      <!-- Hedef (çeviri) dil -->
+      <label class="sr-only" for="targetLang">Hedef Dil</label>
       <select id="targetLang">
         <option value="en">İngilizce</option>
         <option value="tr" selected>Türkçe</option>
@@ -87,7 +95,12 @@
 
       <button id="startBtn">Dinlemeyi Başlat</button>
       <button id="stopBtn" class="secondary" disabled>Durdur</button>
-      <label class="pill" title="Çeviri otomatik sesle okunsun mu?"><input type="checkbox" id="autoSpeak" checked> Otomatik Oku</label>
+      <label class="pill" title="Android için önerilir: Tanıma bitince otomatik yeniden başlatır">
+        <input type="checkbox" id="continuous" checked /> Sürekli Dinleme
+      </label>
+      <label class="pill" title="Çeviri otomatik sesle okunsun mu?">
+        <input type="checkbox" id="autoSpeak" checked /> Otomatik Oku
+      </label>
       <button id="speakBtn" class="secondary" disabled>🔊 Oku</button>
     </div>
 
@@ -115,12 +128,12 @@
       🔍 Tanılama: bekleniyor...
     </div>
 
-    <footer>Ses tanıma: Web Speech API • Çeviri: MyMemory • En iyi deneyim için HTTPS + Chrome/Edge</footer>
+    <footer>Ses tanıma: Web Speech API • Çeviri: MyMemory • En iyi deneyim: HTTPS + güncel Chrome/Edge</footer>
   </div>
 </div>
 
 <script>
-/* ---- Elemanlar ---- */
+/* --------- Elemanlar --------- */
 const recognizedEl = document.getElementById('recognizedText');
 const translatedEl = document.getElementById('translatedText');
 const startBtn = document.getElementById('startBtn');
@@ -136,9 +149,11 @@ const srBadge = document.getElementById('srBadge');
 const micBadge = document.getElementById('micBadge');
 const diag = document.getElementById('diag');
 const lastErrorEl = document.getElementById('lastError');
+const continuousCB = document.getElementById('continuous');
 
 const setBadge = (el, text, cls) => { el.className = `badge ${cls||''}`; el.textContent = text; };
 const setError = (msg) => lastErrorEl.textContent = `Son hata: ${msg}`;
+
 const isHttps = location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname);
 setBadge(httpsBadge, isHttps ? 'HTTPS ✔' : 'HTTPS önerilir', isHttps ? 'ok' : 'warn');
 
@@ -146,19 +161,21 @@ let recognition = null;
 let listening = false;
 let lastTranslated = '';
 
-/* ---- Destek kontrolü ---- */
+/* --------- Destek kontrolü --------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!SR) {
   setBadge(srBadge,'Tarayıcı desteklemiyor','err');
-  diag.textContent = 'Bu tarayıcı Web Speech API’yi desteklemiyor. Alternatif: Vosk (model dosyası gerekli).';
+  diag.textContent = 'Bu tarayıcı Web Speech API’yi desteklemiyor. (Alternatif: Vosk — model gerekir.)';
 } else {
   setBadge(srBadge,'Hazır','ok');
 }
 
-/* ---- Mikrofon izni erkenden iste ---- */
+/* --------- Mikrofon iznini erkenden iste --------- */
 async function preAskMic() {
   try{
-    await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    // izin alındıktan sonra stream'i durdur (boşuna açık kalmasın)
+    stream.getTracks().forEach(t => t.stop());
     setBadge(micBadge,'Mikrofon ✔','ok');
     return true;
   }catch(e){
@@ -169,13 +186,14 @@ async function preAskMic() {
   }
 }
 
-/* ---- Tanıma kur ve başlat ---- */
+/* --------- Tanıma kurulum --------- */
 function setupRecognition() {
   if (!SR) return null;
   const rec = new SR();
   rec.lang = sourceSel.value;            // örn: tr-TR
   rec.interimResults = true;
   rec.maxAlternatives = 1;
+  rec.continuous = true; // Android için daha stabil
 
   rec.onstart = () => {
     recognizedEl.textContent = 'Dinleniyor...';
@@ -185,7 +203,6 @@ function setupRecognition() {
   };
 
   rec.onresult = (e) => {
-    // Son kısım
     const res = e.results[e.results.length - 1];
     const txt = res[0].transcript;
     if (res.isFinal) {
@@ -198,16 +215,21 @@ function setupRecognition() {
 
   rec.onerror = (e) => {
     setBadge(srBadge,'Hata','err');
-    setError(e.error || 'tanıma hatası');
-    diag.textContent = `Hata: ${e.error || 'bilinmiyor'}`;
+    const err = e.error || 'tanıma hatası';
+    setError(err);
+    diag.textContent = `Hata: ${err}`;
+    // bazı hatalarda (no-speech, network) kısa bekleme ile yeniden başlatmak işe yarar
+    if (listening && continuousCB.checked) {
+      try { rec.stop(); } catch {}
+      setTimeout(()=>{ try{ rec.start(); }catch{} }, 400);
+    }
   };
 
-  // Android’de bazen kendiliğinden erken kapanır; burada durumu normalize ediyoruz
   rec.onend = () => {
     startBtn.disabled = false; stopBtn.disabled = true;
     setBadge(srBadge,'Hazır','ok');
-    if (listening) {
-      // Kısa aradan sonra yeniden başlat (Android için pratik çözüm)
+    // Android Chrome'da onend sık tetiklenir; continuous açıksa yeniden başlat
+    if (listening && continuousCB.checked) {
       setTimeout(()=>{ try{ rec.start(); }catch{} }, 250);
     }
   };
@@ -215,7 +237,7 @@ function setupRecognition() {
   return rec;
 }
 
-/* ---- Çeviri (MyMemory) ---- */
+/* --------- Çeviri (MyMemory) --------- */
 async function translateText(text) {
   translatedEl.textContent = 'Çevriliyor...';
   const srcISO = sourceSel.selectedOptions[0].dataset.iso; // tr, en, ...
@@ -223,6 +245,7 @@ async function translateText(text) {
   try{
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${srcISO}|${tgtISO}`;
     const res = await fetch(url);
+    if (!res.ok) throw new Error('Ağ/CORS hatası');
     const data = await res.json();
     const out = data?.responseData?.translatedText || '';
     if (!out) throw new Error('Boş çeviri');
@@ -238,7 +261,7 @@ async function translateText(text) {
   }
 }
 
-/* ---- Sesli okuma ---- */
+/* --------- Sesli okuma --------- */
 function speakNow(){
   if (!lastTranslated) return;
   const u = new SpeechSynthesisUtterance(lastTranslated);
@@ -248,7 +271,7 @@ function speakNow(){
 }
 speakBtn.addEventListener('click', speakNow);
 
-/* ---- Manuel Mod ---- */
+/* --------- Manuel Mod --------- */
 manualTranslateBtn.addEventListener('click', ()=>{
   const text = manualInput.value.trim();
   if (!text) return;
@@ -256,17 +279,16 @@ manualTranslateBtn.addEventListener('click', ()=>{
   translateText(text);
 });
 
-/* ---- Başlat/Durdur ---- */
+/* --------- Başlat/Durdur --------- */
 startBtn.addEventListener('click', async ()=>{
-  if (!SR) return;
+  if (!SR) { setError('Tarayıcı desteklemiyor'); return; }
   const ok = await preAskMic();
   if (!ok) return;
   if (!recognition) recognition = setupRecognition();
-  // Seçilen dile göre güncelle
-  try{ recognition.lang = sourceSel.value; }catch{}
+  try { recognition.lang = sourceSel.value; } catch {}
   listening = true;
-  try{ recognition.start(); }
-  catch(e){ /* "already started" hatası olursa görmezden gel */ }
+  try { recognition.start(); }
+  catch(e){ /* already started vs. */ }
 });
 
 stopBtn.addEventListener('click', ()=>{
@@ -274,7 +296,7 @@ stopBtn.addEventListener('click', ()=>{
   try{ recognition && recognition.stop(); }catch{}
 });
 
-/* ---- İlk tanılama ---- */
+/* --------- İlk tanılama --------- */
 (async ()=>{
   const httpsOk = isHttps;
   const micOk = await preAskMic();
@@ -286,4 +308,10 @@ stopBtn.addEventListener('click', ()=>{
   diag.innerHTML = [
     `Tarayıcı desteği: ${srOk ? '✅ Var' : '❌ Yok'}`,
     `HTTPS: ${httpsOk ? '✅ Evet' : '⚠️ Önerilir'}`,
-    `Mikrofon izni: ${
+    `Mikrofon izni: ${micOk ? '✅ Verildi' : '❌ Yok'}`,
+    `Sürekli Dinleme: ${continuousCB.checked ? 'Açık' : 'Kapalı'}`
+  ].join(' • ');
+})();
+</script>
+</body>
+</html>
