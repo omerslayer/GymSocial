@@ -631,4 +631,97 @@
     let activeChatUserId = null;
 
     function openChat(userId){
-      switchV
+      switchView('messages');
+      const users = read(LS_USERS, []);
+      const u = users.find(x=>x.id===userId);
+      if(!u) return;
+      activeChatUserId = u.id;
+      $('#chatAvatar').textContent = u.name[0].toUpperCase();
+      $('#chatName').textContent = u.name; $('#chatEmail').textContent = u.email;
+      renderChat();
+      // highlight in threads
+      $all('.thread').forEach(t=>t.classList.remove('active'));
+      // naive highlight: select by name text
+      const match = Array.from(document.querySelectorAll('.thread')).find(el=>el.textContent.includes(u.name));
+      if(match) match.classList.add('active');
+    }
+
+    function renderChat(){
+      const users = read(LS_USERS, []);
+      const session = read(LS_SESSION, null); if(!session) return;
+      const me = users.find(u=>u.id===session.id);
+      const key = convoKey(me.id, activeChatUserId);
+      const msgs = getMessages()[key] || [];
+      const body = $('#chatBody');
+      body.innerHTML = '';
+      msgs.forEach(m=>{
+        const div = document.createElement('div');
+        div.className = 'bubble ' + (m.from===me.id ? 'me' : '');
+        div.textContent = m.text;
+        body.appendChild(div);
+      });
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function sendMessage(){
+      const txt = $('#chatText').value.trim();
+      if(!txt || !activeChatUserId) return;
+      const users = read(LS_USERS, []);
+      const session = read(LS_SESSION, null); if(!session) return;
+      const me = users.find(u=>u.id===session.id);
+      const key = convoKey(me.id, activeChatUserId);
+      const all = getMessages();
+      all[key] = all[key] || [];
+      all[key].push({from: me.id, to: activeChatUserId, text: txt, at: Date.now()});
+      setMessages(all);
+      $('#chatText').value = '';
+      renderChat();
+      renderThreads();
+    }
+
+    // ===== Profile =====
+    function loadProfile(me){
+      $('#pName').value = me.name; $('#pEmail').value = me.email;
+      $('#pAge').value = me.age; $('#pHeight').value = me.height; $('#pWeight').value = me.weight;
+      $('#pBench').value = me.bench; $('#pSquat').value = me.squat; $('#pPushups').value = me.pushups; $('#pPullups').value = me.pullups;
+      syncRangeLabels();
+    }
+
+    function saveProfile(){
+      const users = read(LS_USERS, []);
+      const session = read(LS_SESSION, null); if(!session) return;
+      const me = users.find(u=>u.id===session.id);
+      const updated = {
+        ...me,
+        name: $('#pName').value.trim(),
+        age: +$('#pAge').value,
+        height: +$('#pHeight').value,
+        weight: +$('#pWeight').value,
+        bench: +$('#pBench').value,
+        squat: +$('#pSquat').value,
+        pushups: +$('#pPushups').value,
+        pullups: +$('#pPullups').value,
+      };
+      const errs = validateLimits(updated);
+      if(!updated.name) errs.push('Ad gerekli');
+      if(errs.length){ alert('Hata: \n' + errs.join('\n')); return; }
+      const idx = users.findIndex(u=>u.id===me.id); users[idx] = updated; write(LS_USERS, users);
+      $('#profileMsg').style.display = 'inline-block'; setTimeout(()=> $('#profileMsg').style.display='none', 1500);
+      initApp();
+    }
+
+    // ===== UI helpers =====
+    function syncRangeLabels(){
+      const pairs = [
+        ['suBench','suBenchVal',' kg'], ['suSquat','suSquatVal',' kg'], ['suPushups','suPushupsVal',''], ['suPullups','suPullupsVal',''],
+        ['pBench','pBenchVal',' kg'], ['pSquat','pSquatVal',' kg'], ['pPushups','pPushupsVal',''], ['pPullups','pPullupsVal','']
+      ];
+      pairs.forEach(([i, l, suf])=>{ const input = document.getElementById(i); const label = document.getElementById(l); if(input && label){ label.textContent = input.value + suf; input.oninput = ()=> label.textContent = input.value + suf; }});
+    }
+
+    // Init on load
+    syncRangeLabels();
+    initApp();
+  </script>
+</body>
+</html>
