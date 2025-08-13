@@ -1,140 +1,318 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Talk2Translate</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Talk2Translate — Modern</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #0ea5e9, #22d3ee);
-    margin: 0; padding: 20px; color: white;
-    text-align: center;
+  :root{
+    --bg1:#0b1220; --bg2:#0e1b2e; --glass:rgba(255,255,255,.08);
+    --ink:#e9eef7; --muted:#a7b2c7; --brand:#6ee7ff; --accent:#ff6aa7;
+    --ok:#34d399; --warn:#fbbf24; --err:#f87171; --line:rgba(255,255,255,.12);
   }
-  h1 { margin-bottom: 20px; }
-  select, button {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    font-size: 14px;
-    margin: 5px;
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, #1c2f4d 0%, transparent 60%),
+      radial-gradient(900px 600px at -10% 90%, #213b5f 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg1),var(--bg2));
+    display:flex; align-items:center; justify-content:center; padding:20px;
   }
-  button {
-    background: #ff4d8d; color: white; cursor: pointer;
+  .wrap{
+    width:min(980px,100%); padding:20px;
   }
-  button:disabled { background: gray; cursor: not-allowed; }
-  .box {
-    background: rgba(0,0,0,0.3);
-    padding: 10px; border-radius: 8px;
-    min-height: 60px; margin: 10px auto; max-width: 500px;
+  .card{
+    background:var(--glass); border:1px solid var(--line);
+    border-radius:18px; padding:18px; backdrop-filter: blur(16px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
   }
+  header{
+    display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .title{
+    display:flex; align-items:center; gap:10px; letter-spacing:.2px;
+  }
+  .logo{
+    width:36px;height:36px;border-radius:10px;
+    background:linear-gradient(135deg,#77e4ff,#a28bff);
+    display:grid;place-items:center;color:#0a0f1a;font-weight:700;
+    box-shadow:0 6px 24px rgba(119,228,255,.35);
+  }
+  h1{font-size:22px;margin:0}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{
+    font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);
+    border:1px solid var(--line)
+  }
+  .ok{background:rgba(52,211,153,.18); color:#d1fae5}
+  .warn{background:rgba(251,191,36,.18); color:#fef3c7}
+  .err{background:rgba(248,113,113,.18); color:#fee2e2}
+
+  .panel{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  }
+  @media (max-width:860px){ .panel{grid-template-columns:1fr} }
+
+  .tool{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    background:rgba(255,255,255,.05);
+    border:1px dashed var(--line); padding:10px; border-radius:14px;
+  }
+  select, button, textarea, input[type="text"]{
+    border:none; border-radius:12px; padding:11px 12px; font-size:15px;
+    color:var(--ink); background:rgba(255,255,255,.09); outline:none;
+    transition:transform .05s ease;
+  }
+  select{min-width:170px}
+  button{cursor:pointer; background:linear-gradient(135deg,var(--accent),#b56bff); font-weight:600}
+  button.secondary{background:rgba(255,255,255,.09); border:1px solid var(--line); font-weight:500}
+  button:disabled{opacity:.55; cursor:not-allowed}
+  button:active{transform:scale(.98)}
+
+  .grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;
+  }
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} }
+  .box{
+    background:rgba(255,255,255,.06); border:1px solid var(--line);
+    border-radius:16px; padding:12px; min-height:120px; display:flex; flex-direction:column; gap:8px;
+  }
+  .box h3{margin:0;color:var(--muted); font-size:14px; letter-spacing:.2px}
+  .box .view{
+    flex:1; background:rgba(0,0,0,.25); border-radius:12px; padding:12px;
+    overflow:auto; word-break:break-word; line-height:1.5;
+  }
+  .manual{margin-top:14px}
+  textarea{width:100%; min-height:90px; resize:vertical}
+  .bar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px}
+  footer{margin-top:14px; color:var(--muted); font-size:12px; text-align:center}
+  .hint{color:var(--brand)}
+  .switch{display:flex; gap:8px; align-items:center; background:rgba(255,255,255,.07); border:1px solid var(--line); border-radius:999px; padding:6px 10px; font-size:13px}
+  .inline{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <div class="title">
+          <div class="logo">T2</div>
+          <div>
+            <h1>Talk2Translate</h1>
+            <div style="font-size:12px;color:var(--muted)">Canlı konuş — anında çevir — hedef dilde seslendir</div>
+          </div>
+        </div>
+        <div class="badges">
+          <span id="httpsBadge" class="badge">HTTPS kontrol ediliyor…</span>
+          <span id="srBadge" class="badge">SpeechRecognition kontrolü…</span>
+          <span id="micBadge" class="badge">Mikrofon izni bekleniyor…</span>
+        </div>
+      </header>
 
-<h1>🎤 Talk2Translate</h1>
+      <div class="tool">
+        <div class="inline">
+          <span style="opacity:.8">Kaynak</span>
+          <select id="sourceLang">
+            <option value="tr-TR" data-iso="tr" selected>Türkçe</option>
+            <option value="en-US" data-iso="en">İngilizce</option>
+            <option value="de-DE" data-iso="de">Almanca</option>
+            <option value="fr-FR" data-iso="fr">Fransızca</option>
+            <option value="es-ES" data-iso="es">İspanyolca</option>
+            <option value="ar-SA" data-iso="ar">Arapça</option>
+            <option value="ru-RU" data-iso="ru">Rusça</option>
+          </select>
+        </div>
 
-<div>
-  Kaynak Dil:
-  <select id="sourceLang">
-    <option value="tr-TR" data-iso="tr">Türkçe</option>
-    <option value="en-US" data-iso="en">İngilizce</option>
-    <option value="de-DE" data-iso="de">Almanca</option>
-    <option value="fr-FR" data-iso="fr">Fransızca</option>
-    <option value="es-ES" data-iso="es">İspanyolca</option>
-  </select>
+        <div class="inline">
+          <span style="opacity:.8">Hedef</span>
+          <select id="targetLang">
+            <option value="en" selected>İngilizce</option>
+            <option value="tr">Türkçe</option>
+            <option value="de">Almanca</option>
+            <option value="fr">Fransızca</option>
+            <option value="es">İspanyolca</option>
+            <option value="ar">Arapça</option>
+            <option value="ru">Rusça</option>
+          </select>
+        </div>
 
-  Hedef Dil:
-  <select id="targetLang">
-    <option value="en">İngilizce</option>
-    <option value="tr">Türkçe</option>
-    <option value="de">Almanca</option>
-    <option value="fr">Fransızca</option>
-    <option value="es">İspanyolca</option>
-  </select>
-</div>
+        <div class="inline" style="margin-left:auto">
+          <button id="startBtn">🎙 Başlat</button>
+          <button id="stopBtn" class="secondary" disabled>⏹ Durdur</button>
+          <label class="switch">
+            <input type="checkbox" id="autoSpeak" checked style="accent-color:#fff"> otomatik oku
+          </label>
+          <button id="speakBtn" class="secondary" disabled>🔊 Oku</button>
+        </div>
+      </div>
 
-<div>
-  <button id="startBtn">🎙 Dinlemeyi Başlat</button>
-  <button id="stopBtn" disabled>⏹ Durdur</button>
-  <button id="speakBtn" disabled>🔊 Sesle Oku</button>
-</div>
+      <div class="grid">
+        <div class="box">
+          <h3>Algılanan Metin</h3>
+          <div id="recognizedText" class="view">—</div>
+        </div>
+        <div class="box">
+          <h3>Çevrilen Metin</h3>
+          <div id="translatedText" class="view">—</div>
+        </div>
+      </div>
 
-<h3>Algılanan Metin</h3>
-<div class="box" id="recognizedText">—</div>
+      <div class="box manual">
+        <h3>Manuel Mod</h3>
+        <textarea id="manualInput" placeholder="Metni yazın ve Çevir’e basın…"></textarea>
+        <div class="bar">
+          <button id="manualTranslateBtn">Çevir</button>
+          <span id="lastError" class="badge">Son hata: yok</span>
+          <span class="hint">İpucu: iOS Safari konuşma tanımayı desteklemez.</span>
+        </div>
+      </div>
 
-<h3>Çevrilen Metin</h3>
-<div class="box" id="translatedText">—</div>
+      <footer>
+        Ücretsiz çeviri: MyMemory • En iyi sonuç için Chrome/Edge + HTTPS (GitHub Pages) kullanın.
+      </footer>
+    </div>
+  </div>
 
 <script>
-const recognizedText = document.getElementById("recognizedText");
-const translatedText = document.getElementById("translatedText");
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
-const speakBtn = document.getElementById("speakBtn");
-const sourceLang = document.getElementById("sourceLang");
-const targetLang = document.getElementById("targetLang");
+  // === Elementler ===
+  const recognizedEl = document.getElementById('recognizedText');
+  const translatedEl = document.getElementById('translatedText');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const speakBtn = document.getElementById('speakBtn');
+  const autoSpeak = document.getElementById('autoSpeak');
+  const manualInput = document.getElementById('manualInput');
+  const manualTranslateBtn = document.getElementById('manualTranslateBtn');
+  const sourceSel = document.getElementById('sourceLang');
+  const targetSel = document.getElementById('targetLang');
+  const httpsBadge = document.getElementById('httpsBadge');
+  const srBadge = document.getElementById('srBadge');
+  const micBadge = document.getElementById('micBadge');
+  const lastErrorEl = document.getElementById('lastError');
 
-let recognition;
-let lastTranslated = "";
-
-startBtn.addEventListener("click", () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    alert("Tarayıcınız ses tanımayı desteklemiyor.");
-    return;
+
+  // === rozet yardımcıları ===
+  const setBadge = (el, text, cls) => { el.className = `badge ${cls||''}`; el.textContent = text; };
+  const setError = (msg) => lastErrorEl.textContent = `Son hata: ${msg}`;
+
+  // HTTPS kontrol
+  const isHttps = location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname);
+  setBadge(httpsBadge, isHttps ? 'HTTPS ✔' : 'HTTPS gerekli (GitHub Pages önerilir)', isHttps ? 'ok' : 'warn');
+
+  // SpeechRecognition desteği
+  if (SR) setBadge(srBadge, 'SpeechRecognition destekleniyor ✔', 'ok');
+  else setBadge(srBadge, 'SpeechRecognition desteklenmiyor', 'err');
+
+  // Mikrofon izni
+  navigator.mediaDevices?.getUserMedia?.({audio:true})
+    .then(()=> setBadge(micBadge,'Mikrofon izni verildi ✔','ok'))
+    .catch(()=> setBadge(micBadge,'Mikrofon izni yok','err'));
+
+  // === Çeviri — MyMemory ===
+  async function translateText(text, sourceISO, targetISO) {
+    translatedEl.textContent = 'Çevriliyor…';
+    try{
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceISO}|${targetISO}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      let out = (data?.responseData?.translatedText || '').trim();
+      if (!out && Array.isArray(data?.matches) && data.matches.length){
+        // bazen matches içinde daha iyi sonuç olur
+        out = (data.matches[0].translation || '').trim();
+      }
+      if (!out) throw new Error('Boş çeviri döndü');
+      translatedEl.textContent = out;
+      lastTranslated = out;
+      speakBtn.disabled = false;
+      setError('yok');
+      if (autoSpeak.checked) speakNow();
+    }catch(e){
+      translatedEl.textContent = 'Çeviri hatası!';
+      speakBtn.disabled = true;
+      setError(e.message || 'Çeviri hatası');
+    }
   }
-  recognition = new SR();
-  recognition.lang = sourceLang.value;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
 
-  recognition.onstart = () => {
-    recognizedText.textContent = "Dinleniyor...";
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-  };
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    recognizedText.textContent = transcript;
-    translateText(transcript, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
-  };
-  recognition.onerror = (e) => {
-    recognizedText.textContent = "Hata: " + e.error;
-  };
-  recognition.onend = () => {
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-  };
-  recognition.start();
-});
-
-stopBtn.addEventListener("click", () => {
-  if (recognition) recognition.stop();
-});
-
-async function translateText(text, sourceISO, targetISO) {
-  translatedText.textContent = "Çevriliyor...";
-  try {
-    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceISO}|${targetISO}`);
-    const data = await res.json();
-    const out = data.responseData.translatedText;
-    translatedText.textContent = out;
-    lastTranslated = out;
-    speakBtn.disabled = false;
-  } catch {
-    translatedText.textContent = "Çeviri hatası!";
-    speakBtn.disabled = true;
+  // === Sesle okuma ===
+  let lastTranslated = '';
+  function speakNow(){
+    if (!lastTranslated) return;
+    const u = new SpeechSynthesisUtterance(lastTranslated);
+    u.lang = targetSel.value; // en, tr, de...
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
   }
-}
+  speakBtn.addEventListener('click', speakNow);
 
-speakBtn.addEventListener("click", () => {
-  if (!lastTranslated) return;
-  const utterance = new SpeechSynthesisUtterance(lastTranslated);
-  utterance.lang = targetLang.value;
-  speechSynthesis.speak(utterance);
-});
+  // === Manuel mod ===
+  manualTranslateBtn.addEventListener('click', ()=>{
+    const text = manualInput.value.trim();
+    if (!text) return;
+    recognizedEl.textContent = text;
+    const srcISO = sourceSel.selectedOptions[0].dataset.iso; // tr, en...
+    const tgtISO = targetSel.value;
+    translateText(text, srcISO, tgtISO);
+  });
+
+  // === Canlı dinleme ===
+  let recognition = null;
+
+  startBtn.addEventListener('click', async ()=>{
+    if (!SR){ setError('Tarayıcı desteklemiyor'); alert('Tarayıcınız ses tanımayı desteklemiyor.'); return; }
+
+    // kullanıcı etkileşimi ile izin al
+    try { await navigator.mediaDevices.getUserMedia({audio:true}); setBadge(micBadge,'Mikrofon izni verildi ✔','ok'); }
+    catch { setBadge(micBadge,'Mikrofon izni yok','err'); setError('Mikrofon izni verilmedi'); return; }
+
+    recognition = new SR();
+    recognition.lang = sourceSel.value; // tr-TR, en-US...
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = ()=>{
+      recognizedEl.textContent = 'Dinleniyor…';
+      startBtn.disabled = true; stopBtn.disabled = false;
+    };
+
+    recognition.onresult = (e)=>{
+      const txt = Array.from(e.results).map(r=>r[0].transcript).join(' ');
+      recognizedEl.textContent = txt || '—';
+      // final olduğunda çevir
+      if (e.results[e.results.length-1].isFinal){
+        const srcISO = sourceSel.selectedOptions[0].dataset.iso;
+        const tgtISO = targetSel.value;
+        translateText(txt, srcISO, tgtISO);
+      }
+    };
+
+    recognition.onerror = (e)=>{
+      recognizedEl.textContent = `Hata: ${e.error}`;
+      setError(e.error || 'tanıma hatası');
+    };
+
+    recognition.onend = ()=>{
+      startBtn.disabled = false; stopBtn.disabled = true;
+    };
+
+    recognition.start();
+  });
+
+  stopBtn.addEventListener('click', ()=>{
+    if (recognition){ try{ recognition.stop(); }catch{} }
+  });
+
+  // Kaynak ve hedef aynı olursa hedefi otomatik değiştir
+  sourceSel.addEventListener('change', ()=>{
+    const src = sourceSel.selectedOptions[0].dataset.iso;
+    if (src === targetSel.value){
+      targetSel.value = (src === 'en') ? 'tr' : 'en';
+    }
+  });
 </script>
-
 </body>
 </html>
