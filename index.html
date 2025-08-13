@@ -1,317 +1,218 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Talk2Translate — Canlı Çeviri</title>
-<meta name="color-scheme" content="dark light" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talk2Translate</title>
 <style>
-  :root{
-    --bg1:#0b1220; --bg2:#111827;
-    --ink:#e5e7eb; --muted:#9ca3af;
-    --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
-    --accent:#ec4899; --accent2:#8b5cf6;
-    --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+    margin: 0; padding: 20px; color: white;
+    display: flex; justify-content: center;
   }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; font-family:ui-sans-serif,system-ui,Arial,Segoe UI,Roboto;
-    background:radial-gradient(1200px 600px at 10% 0%,#1e293b 0%,transparent 60%),
-               radial-gradient(1200px 600px at 100% 0%,#0ea5e9 0%,transparent 50%),
-               linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:var(--ink); display:flex; justify-content:center; padding:22px;
+  .container {
+    max-width: 800px; width: 100%;
+    background: rgba(255,255,255,0.1);
+    padding: 20px; border-radius: 15px;
+    backdrop-filter: blur(10px);
   }
-  .wrap{width:min(980px,100%)}
-  .card{
-    background:var(--glass); border:1px solid var(--line); border-radius:22px; padding:18px 18px 16px;
-    backdrop-filter:blur(16px); box-shadow:0 12px 32px rgba(0,0,0,.35);
+  h1 { text-align: center; margin-bottom: 10px; }
+  select, button, textarea {
+    padding: 10px; border-radius: 8px; border: none;
+    font-size: 14px;
   }
-  header{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
-  h1{margin:0; font-size:22px; letter-spacing:.3px}
-  .badges{display:flex; gap:8px; flex-wrap:wrap}
-  .badge{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.08)}
-  .ok{background:rgba(16,185,129,.16)} .warn{background:rgba(245,158,11,.16)} .err{background:rgba(239,68,68,.16)}
-  .controls{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
-  select,button,textarea,input[type="checkbox"]{accent-color:var(--accent)}
-  select,button,textarea{
-    border:none; border-radius:12px; padding:10px 12px; font-size:15px;
-    color:var(--ink); background:rgba(255,255,255,.08);
+  button {
+    background: #ff4d8d; color: white; cursor: pointer;
   }
-  button{
-    cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); font-weight:700;
-    border:0; transition:filter .15s ease, transform .02s;
+  button:disabled { background: gray; cursor: not-allowed; }
+  .box {
+    background: rgba(0,0,0,0.3);
+    padding: 10px; border-radius: 8px;
+    min-height: 60px; margin-bottom: 10px;
   }
-  button.secondary{background:rgba(255,255,255,.08); border:1px solid var(--line); font-weight:600}
-  button:disabled{opacity:.55; cursor:not-allowed}
-  button:active{transform:translateY(1px)}
-  .pill{padding:8px 12px; border-radius:999px; border:1px dashed var(--line); font-size:13px; display:flex; align-items:center; gap:8px}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  @media(max-width:860px){.grid{grid-template-columns:1fr}}
-  .box{background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:16px; padding:12px; min-height:120px; display:flex; flex-direction:column}
-  .box h3{margin:0 0 8px; font-size:14px; color:var(--muted)}
-  .view{flex:1; background:rgba(0,0,0,.25); border-radius:12px; padding:10px; overflow:auto; line-height:1.55; word-wrap:break-word; white-space:pre-wrap}
-  textarea{width:100%; resize:vertical; min-height:90px}
-  .bar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px}
-  .diag{margin-top:12px; font-size:13px; color:var(--muted); line-height:1.5}
-  footer{margin-top:12px; font-size:12px; color:var(--muted); text-align:center}
-  .sr-only{position:absolute;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden;white-space:nowrap}
+  textarea { width: 100%; min-height: 60px; resize: vertical; }
+  .diagnostics {
+    background: rgba(0,0,0,0.3);
+    padding: 10px; border-radius: 8px;
+    font-size: 14px; margin-top: 15px;
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <header>
-      <h1>🎤 Talk2Translate</h1>
-      <div class="badges">
-        <span id="httpsBadge" class="badge">HTTPS kontrol...</span>
-        <span id="srBadge" class="badge">Tanıma hazırlanıyor...</span>
-        <span id="micBadge" class="badge">Mikrofon...</span>
-      </div>
-    </header>
+<div class="container">
+  <h1>🎤 Talk2Translate</h1>
 
-    <div class="controls" role="group" aria-label="Kontroller">
-      <label class="sr-only" for="sourceLang">Kaynak Dil</label>
-      <select id="sourceLang">
-        <option value="tr-TR" data-iso="tr" selected>Türkçe</option>
-        <option value="en-US" data-iso="en">İngilizce</option>
-        <option value="de-DE" data-iso="de">Almanca</option>
-        <option value="fr-FR" data-iso="fr">Fransızca</option>
-        <option value="es-ES" data-iso="es">İspanyolca</option>
-        <option value="ru-RU" data-iso="ru">Rusça</option>
-        <option value="ar-SA" data-iso="ar">Arapça</option>
-      </select>
+  <div>
+    Kaynak Dil:
+    <select id="sourceLang">
+      <option value="tr-TR" data-iso="tr">Türkçe</option>
+      <option value="en-US" data-iso="en">İngilizce</option>
+      <option value="de-DE" data-iso="de">Almanca</option>
+      <option value="fr-FR" data-iso="fr">Fransızca</option>
+      <option value="es-ES" data-iso="es">İspanyolca</option>
+      <option value="ru-RU" data-iso="ru">Rusça</option>
+      <option value="ar-SA" data-iso="ar">Arapça</option>
+    </select>
+    Hedef Dil:
+    <select id="targetLang">
+      <option value="en">İngilizce</option>
+      <option value="tr">Türkçe</option>
+      <option value="de">Almanca</option>
+      <option value="fr">Fransızca</option>
+      <option value="es">İspanyolca</option>
+      <option value="ru">Rusça</option>
+      <option value="ar">Arapça</option>
+    </select>
+  </div>
 
-      <label class="sr-only" for="targetLang">Hedef Dil</label>
-      <select id="targetLang">
-        <option value="en">İngilizce</option>
-        <option value="tr" selected>Türkçe</option>
-        <option value="de">Almanca</option>
-        <option value="fr">Fransızca</option>
-        <option value="es">İspanyolca</option>
-        <option value="ru">Rusça</option>
-        <option value="ar">Arapça</option>
-      </select>
+  <div style="margin: 10px 0;">
+    <button id="startBtn">🎙 Dinlemeyi Başlat</button>
+    <button id="stopBtn" disabled>⏹ Durdur</button>
+    <button id="speakBtn" disabled>🔊 Sesle Oku</button>
+  </div>
 
-      <button id="startBtn">Dinlemeyi Başlat</button>
-      <button id="stopBtn" class="secondary" disabled>Durdur</button>
-      <label class="pill" title="Android için önerilir: Tanıma bitince otomatik yeniden başlatır">
-        <input type="checkbox" id="continuous" checked /> Sürekli Dinleme
-      </label>
-      <label class="pill" title="Çeviri otomatik sesle okunsun mu?">
-        <input type="checkbox" id="autoSpeak" checked /> Otomatik Oku
-      </label>
-      <button id="speakBtn" class="secondary" disabled>🔊 Oku</button>
-    </div>
+  <h3>Algılanan Metin</h3>
+  <div class="box" id="recognizedText">—</div>
 
-    <div class="grid">
-      <div class="box">
-        <h3>Algılanan</h3>
-        <div id="recognizedText" class="view">—</div>
-      </div>
-      <div class="box">
-        <h3>Çevrilen</h3>
-        <div id="translatedText" class="view">—</div>
-      </div>
-    </div>
+  <h3>Çevrilen Metin</h3>
+  <div class="box" id="translatedText">—</div>
 
-    <div class="box" style="margin-top:14px">
-      <h3>Manuel Mod</h3>
-      <textarea id="manualInput" placeholder="Metni yaz..."></textarea>
-      <div class="bar">
-        <button id="manualTranslateBtn">Çevir</button>
-        <span id="lastError" class="badge">Son hata: yok</span>
-      </div>
-    </div>
+  <h3>Manuel Mod</h3>
+  <textarea id="manualInput" placeholder="Metni yazın..."></textarea>
+  <button id="manualTranslateBtn">Çevir</button>
 
-    <div class="diag" id="diag">
-      🔍 Tanılama: bekleniyor...
-    </div>
-
-    <footer>Ses tanıma: Web Speech API • Çeviri: MyMemory • En iyi deneyim: HTTPS + güncel Chrome/Edge</footer>
+  <div class="diagnostics" id="diagnostics">
+    🔍 Tanılama:<br>
+    - Tarayıcı desteği: kontrol ediliyor...<br>
+    - HTTPS: kontrol ediliyor...<br>
+    - Mikrofon izni: kontrol ediliyor...<br>
+    - Son hata: yok
   </div>
 </div>
 
 <script>
-/* --------- Elemanlar --------- */
-const recognizedEl = document.getElementById('recognizedText');
-const translatedEl = document.getElementById('translatedText');
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const speakBtn = document.getElementById('speakBtn');
-const autoSpeak = document.getElementById('autoSpeak');
-const manualInput = document.getElementById('manualInput');
-const manualTranslateBtn = document.getElementById('manualTranslateBtn');
-const sourceSel = document.getElementById('sourceLang');
-const targetSel = document.getElementById('targetLang');
-const httpsBadge = document.getElementById('httpsBadge');
-const srBadge = document.getElementById('srBadge');
-const micBadge = document.getElementById('micBadge');
-const diag = document.getElementById('diag');
-const lastErrorEl = document.getElementById('lastError');
-const continuousCB = document.getElementById('continuous');
+const recognizedText = document.getElementById("recognizedText");
+const translatedText = document.getElementById("translatedText");
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const speakBtn = document.getElementById("speakBtn");
+const manualInput = document.getElementById("manualInput");
+const manualTranslateBtn = document.getElementById("manualTranslateBtn");
+const sourceLang = document.getElementById("sourceLang");
+const targetLang = document.getElementById("targetLang");
+const diagnostics = document.getElementById("diagnostics");
 
-const setBadge = (el, text, cls) => { el.className = `badge ${cls||''}`; el.textContent = text; };
-const setError = (msg) => lastErrorEl.textContent = `Son hata: ${msg}`;
+let recognition;
+let lastTranslated = "";
+let finalTranscript = "";
 
-const isHttps = location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname);
-setBadge(httpsBadge, isHttps ? 'HTTPS ✔' : 'HTTPS önerilir', isHttps ? 'ok' : 'warn');
-
-let recognition = null;
-let listening = false;
-let lastTranslated = '';
-
-/* --------- Destek kontrolü --------- */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!SR) {
-  setBadge(srBadge,'Tarayıcı desteklemiyor','err');
-  diag.textContent = 'Bu tarayıcı Web Speech API’yi desteklemiyor. (Alternatif: Vosk — model gerekir.)';
-} else {
-  setBadge(srBadge,'Hazır','ok');
+// Tanılama kontrolü
+function updateDiagnostics(status) {
+  diagnostics.innerHTML = `
+    🔍 Tanılama:<br>
+    - Tarayıcı desteği: ${status.sr}<br>
+    - HTTPS: ${status.https}<br>
+    - Mikrofon izni: ${status.mic}<br>
+    - Son hata: ${status.error}
+  `;
 }
 
-/* --------- Mikrofon iznini erkenden iste --------- */
-async function preAskMic() {
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    // izin alındıktan sonra stream'i durdur (boşuna açık kalmasın)
-    stream.getTracks().forEach(t => t.stop());
-    setBadge(micBadge,'Mikrofon ✔','ok');
-    return true;
-  }catch(e){
-    setBadge(micBadge,'Mikrofon izni yok','err');
-    setError('Mikrofon izni verilmedi');
-    diag.textContent = 'Mikrofon izni verilmedi. Lütfen İzin ver → sonra tekrar deneyin.';
-    return false;
+function checkDiagnostics(errorMsg = "yok") {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const srSupport = SR ? "✅ Var" : "❌ Yok";
+  const isHttps = location.protocol === "https:" ? "✅ Evet" : "❌ Hayır";
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(() => {
+      updateDiagnostics({ sr: srSupport, https: isHttps, mic: "✅ İzin verildi", error: errorMsg });
+    })
+    .catch(() => {
+      updateDiagnostics({ sr: srSupport, https: isHttps, mic: "❌ İzin yok", error: errorMsg });
+    });
+}
+checkDiagnostics();
+
+// Dinlemeyi başlat
+startBtn.addEventListener("click", () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert("Tarayıcınız ses tanımayı desteklemiyor."); checkDiagnostics("Tarayıcı desteklemiyor"); return; }
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(() => {
+      recognition = new SR();
+      recognition.lang = sourceLang.value;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        recognizedText.textContent = "Dinleniyor...";
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        finalTranscript = "";
+      };
+
+      recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        finalTranscript += transcript + " ";
+        recognizedText.textContent = finalTranscript.trim();
+      };
+
+      recognition.onerror = (e) => {
+        recognizedText.textContent = "Hata: " + e.error;
+        checkDiagnostics(e.error);
+      };
+
+      // Artık otomatik yeniden başlatma yok
+      recognition.start();
+    })
+    .catch(() => { alert("Mikrofon izni verilmedi."); checkDiagnostics("Mikrofon izni yok"); });
+});
+
+// Durdurma ve çeviri
+stopBtn.addEventListener("click", () => {
+  if (recognition) {
+    recognition.stop();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    if (finalTranscript.trim()) {
+      translateText(finalTranscript.trim(), sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
+    }
   }
-}
+});
 
-/* --------- Tanıma kurulum --------- */
-function setupRecognition() {
-  if (!SR) return null;
-  const rec = new SR();
-  rec.lang = sourceSel.value;            // örn: tr-TR
-  rec.interimResults = true;
-  rec.maxAlternatives = 1;
-  rec.continuous = true; // Android için daha stabil
-
-  rec.onstart = () => {
-    recognizedEl.textContent = 'Dinleniyor...';
-    diag.textContent = `Tanıma başladı (${rec.lang}). Konuşmaya başlayın.`;
-    setBadge(srBadge,'Dinleniyor','ok');
-    startBtn.disabled = true; stopBtn.disabled = false;
-  };
-
-  rec.onresult = (e) => {
-    const res = e.results[e.results.length - 1];
-    const txt = res[0].transcript;
-    if (res.isFinal) {
-      recognizedEl.textContent = txt;
-      translateText(txt);
-    } else {
-      recognizedEl.textContent = (txt || '') + ' …';
-    }
-  };
-
-  rec.onerror = (e) => {
-    setBadge(srBadge,'Hata','err');
-    const err = e.error || 'tanıma hatası';
-    setError(err);
-    diag.textContent = `Hata: ${err}`;
-    // bazı hatalarda (no-speech, network) kısa bekleme ile yeniden başlatmak işe yarar
-    if (listening && continuousCB.checked) {
-      try { rec.stop(); } catch {}
-      setTimeout(()=>{ try{ rec.start(); }catch{} }, 400);
-    }
-  };
-
-  rec.onend = () => {
-    startBtn.disabled = false; stopBtn.disabled = true;
-    setBadge(srBadge,'Hazır','ok');
-    // Android Chrome'da onend sık tetiklenir; continuous açıksa yeniden başlat
-    if (listening && continuousCB.checked) {
-      setTimeout(()=>{ try{ rec.start(); }catch{} }, 250);
-    }
-  };
-
-  return rec;
-}
-
-/* --------- Çeviri (MyMemory) --------- */
-async function translateText(text) {
-  translatedEl.textContent = 'Çevriliyor...';
-  const srcISO = sourceSel.selectedOptions[0].dataset.iso; // tr, en, ...
-  const tgtISO = targetSel.value;                          // tr, en, ...
-  try{
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${srcISO}|${tgtISO}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Ağ/CORS hatası');
+// MyMemory çeviri
+async function translateText(text, sourceISO, targetISO) {
+  translatedText.textContent = "Çevriliyor...";
+  try {
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceISO}|${targetISO}`);
     const data = await res.json();
-    const out = data?.responseData?.translatedText || '';
-    if (!out) throw new Error('Boş çeviri');
-    translatedEl.textContent = out;
+    const out = data.responseData.translatedText;
+    translatedText.textContent = out;
     lastTranslated = out;
     speakBtn.disabled = false;
-    setError('yok');
-    if (autoSpeak.checked) speakNow();
-  }catch(e){
-    translatedEl.textContent = 'Çeviri hatası!';
+    checkDiagnostics();
+  } catch {
+    translatedText.textContent = "Çeviri hatası!";
     speakBtn.disabled = true;
-    setError(e.message || 'Çeviri hatası');
+    checkDiagnostics("Çeviri hatası");
   }
 }
 
-/* --------- Sesli okuma --------- */
-function speakNow(){
+// Sesle okuma
+speakBtn.addEventListener("click", () => {
   if (!lastTranslated) return;
-  const u = new SpeechSynthesisUtterance(lastTranslated);
-  const voiceMap = { tr:'tr-TR', en:'en-US', de:'de-DE', fr:'fr-FR', es:'es-ES', ru:'ru-RU', ar:'ar-SA' };
-  u.lang = voiceMap[targetSel.value] || 'en-US';
-  speechSynthesis.speak(u);
-}
-speakBtn.addEventListener('click', speakNow);
+  const utterance = new SpeechSynthesisUtterance(lastTranslated);
+  utterance.lang = targetLang.value;
+  speechSynthesis.speak(utterance);
+});
 
-/* --------- Manuel Mod --------- */
-manualTranslateBtn.addEventListener('click', ()=>{
+// Manuel mod
+manualTranslateBtn.addEventListener("click", () => {
   const text = manualInput.value.trim();
   if (!text) return;
-  recognizedEl.textContent = text;
-  translateText(text);
+  recognizedText.textContent = text;
+  translateText(text, sourceLang.selectedOptions[0].dataset.iso, targetLang.value);
 });
-
-/* --------- Başlat/Durdur --------- */
-startBtn.addEventListener('click', async ()=>{
-  if (!SR) { setError('Tarayıcı desteklemiyor'); return; }
-  const ok = await preAskMic();
-  if (!ok) return;
-  if (!recognition) recognition = setupRecognition();
-  try { recognition.lang = sourceSel.value; } catch {}
-  listening = true;
-  try { recognition.start(); }
-  catch(e){ /* already started vs. */ }
-});
-
-stopBtn.addEventListener('click', ()=>{
-  listening = false;
-  try{ recognition && recognition.stop(); }catch{}
-});
-
-/* --------- İlk tanılama --------- */
-(async ()=>{
-  const httpsOk = isHttps;
-  const micOk = await preAskMic();
-  const srOk = !!SR;
-  setBadge(httpsBadge, httpsOk ? 'HTTPS ✔' : 'HTTPS önerilir', httpsOk ? 'ok':'warn');
-  setBadge(srBadge, srOk ? 'Hazır':'Tarayıcı desteklemiyor', srOk ? 'ok':'err');
-  setBadge(micBadge, micOk ? 'Mikrofon ✔':'Mikrofon izni yok', micOk ? 'ok':'err');
-
-  diag.innerHTML = [
-    `Tarayıcı desteği: ${srOk ? '✅ Var' : '❌ Yok'}`,
-    `HTTPS: ${httpsOk ? '✅ Evet' : '⚠️ Önerilir'}`,
-    `Mikrofon izni: ${micOk ? '✅ Verildi' : '❌ Yok'}`,
-    `Sürekli Dinleme: ${continuousCB.checked ? 'Açık' : 'Kapalı'}`
-  ].join(' • ');
-})();
 </script>
 </body>
 </html>
