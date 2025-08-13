@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Talk2Translate — Canlı Çeviri</title>
+  <title>Talk2Translate — Canlı Çeviri (MyMemory)</title>
   <meta name="theme-color" content="#0ea5e9" />
   <style>
     :root{
       --bg1:#0ea5e9; --bg2:#22d3ee; --card:rgba(255,255,255,.12);
       --glass:rgba(255,255,255,.2); --text:#fff; --accent:#ff4d8d; --accent2:#f50057;
-      --ok:#34d399; --warn:#fbbf24; --err:#f87171; --muted:rgba(255,255,255,.75);
+      --ok:#34d399; --warn:#fbbf24; --err:#f87171; --muted:rgba(255,255,255,.78);
+      --ink:#0b1020;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -17,22 +18,22 @@
       margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;
       color:var(--text);
       background:linear-gradient(135deg,var(--bg1),var(--bg2)) fixed;
-      display:flex; align-items:center; justify-content:center; padding:24px;
+      display:flex; align-items:center; justify-content:center; padding:20px;
     }
     .app{
-      width:min(900px,100%); backdrop-filter: blur(10px);
+      width:min(980px,100%); backdrop-filter: blur(10px);
       background:var(--card); border:1px solid rgba(255,255,255,.15);
-      border-radius:20px; padding:22px; box-shadow:0 20px 60px rgba(0,0,0,.25);
+      border-radius:22px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.28);
     }
-    header{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+    header{display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap}
     .brand{display:flex; gap:12px; align-items:center}
     .logo{
-      width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#fff,rgba(255,255,255,.5));
-      display:grid;place-items:center;color:#0ea5e9;font-weight:900;box-shadow:inset 0 0 0 2px rgba(14,165,233,.3)
+      width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#fff,rgba(255,255,255,.6));
+      display:grid;place-items:center;color:#0ea5e9;font-weight:900;box-shadow:inset 0 0 0 2px rgba(14,165,233,.28)
     }
     h1{margin:0;font-size:22px}
     .sub{color:var(--muted);font-size:14px;margin-top:2px}
-    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
     select,.btn{
       appearance:none;border:none;border-radius:12px;padding:12px 14px;font-size:15px; background:var(--glass); color:#fff;
       box-shadow:inset 0 0 0 1px rgba(255,255,255,.18); outline: none;
@@ -44,15 +45,16 @@
     .btn.primary:hover{background:var(--accent2)}
     .btn.ok{background:var(--ok); color:#053b2d}
     .btn.muted{background:rgba(255,255,255,.12)}
+    .btn[disabled]{opacity:.6; cursor:not-allowed}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+    @media(min-width:780px){.grid{grid-template-columns:1fr 1fr}}
     .card{
       background:var(--glass); border-radius:16px; padding:14px;
       box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);
       min-height:120px; display:flex; flex-direction:column; gap:8px;
     }
     .card h3{margin:0;font-size:14px;letter-spacing:.3px;color:#eef}
-    .text{background:rgba(0,0,0,.25); border-radius:12px; padding:12px; min-height:72px; font-size:16px; line-height:1.5}
+    .text{background:rgba(0,0,0,.25); border-radius:12px; padding:12px; min-height:76px; font-size:16px; line-height:1.5}
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
     .status{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;font-size:13px;background:rgba(0,0,0,.25)}
     .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
@@ -61,14 +63,15 @@
     details{background:rgba(0,0,0,.18); padding:10px 12px; border-radius:12px; margin-top:12px}
     summary{cursor:pointer; color:#fff}
     .hint{font-size:13px;color:var(--muted)}
-    footer{margin-top:12px;font-size:12px;color:var(--muted);text-align:center}
+    footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
     .toast{
       position:fixed; left:50%; transform:translateX(-50%); bottom:18px;
-      background:rgba(0,0,0,.8); padding:10px 14px; border-radius:10px; color:#fff; font-size:14px; display:none; z-index:9999
+      background:rgba(0,0,0,.86); padding:10px 14px; border-radius:10px; color:#fff; font-size:14px; display:none; z-index:9999
     }
-    .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .9s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .pill{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.22);font-size:12px}
+    .pill{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.22);font-size:12px; display:inline-flex; gap:8px; align-items:center}
+    .kbd{background:rgba(255,255,255,.15); border-radius:6px; padding:2px 6px; font-size:12px}
+    .note{font-size:12px;color:#eef;opacity:.85}
+    .badge{padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.25);font-size:12px}
   </style>
 </head>
 <body>
@@ -78,25 +81,25 @@
         <div class="logo">T2</div>
         <div>
           <h1>Talk2Translate</h1>
-          <div class="sub">Konuş — Çevir — Dinlet</div>
+          <div class="sub">Konuş — Çevir — Dinlet (MyMemory)</div>
         </div>
       </div>
       <div class="status" id="status"><span class="dot"></span><span id="statusText">Hazır</span></div>
     </header>
 
     <div class="controls">
-      <label class="pill">Kaynak:
+      <span class="pill">Kaynak:
         <select id="sourceLang">
-          <option value="tr-TR">Türkçe (TR)</option>
-          <option value="en-US">İngilizce (US)</option>
-          <option value="en-GB">İngilizce (UK)</option>
-          <option value="de-DE">Almanca</option>
-          <option value="fr-FR">Fransızca</option>
-          <option value="es-ES">İspanyolca</option>
+          <option value="tr-TR" data-iso="tr">Türkçe (TR)</option>
+          <option value="en-US" data-iso="en">İngilizce (US)</option>
+          <option value="en-GB" data-iso="en">İngilizce (UK)</option>
+          <option value="de-DE" data-iso="de">Almanca</option>
+          <option value="fr-FR" data-iso="fr">Fransızca</option>
+          <option value="es-ES" data-iso="es">İspanyolca</option>
         </select>
-      </label>
+      </span>
 
-      <label class="pill">Hedef:
+      <span class="pill">Hedef:
         <select id="targetLang">
           <option value="en">İngilizce</option>
           <option value="tr">Türkçe</option>
@@ -104,7 +107,7 @@
           <option value="fr">Fransızca</option>
           <option value="es">İspanyolca</option>
         </select>
-      </label>
+      </span>
 
       <button class="btn primary" id="startBtn">🎤 Dinlemeyi Başlat</button>
       <button class="btn muted" id="stopBtn" disabled>⏹️ Durdur</button>
@@ -113,243 +116,27 @@
 
     <div class="grid">
       <div class="card">
-        <h3>🎙️ Algılanan Metin</h3>
+        <h3>🎙️ Algılanan Metin <span class="badge" id="srBadge">SpeechRecognition</span></h3>
         <div id="recognizedText" class="text" aria-live="polite">—</div>
       </div>
       <div class="card">
-        <h3>🌐 Çevrilen Metin</h3>
+        <h3>🌐 Çevrilen Metin <span class="badge" id="txBadge">MyMemory</span></h3>
         <div id="translatedText" class="text" aria-live="polite">—</div>
+        <div class="note">Not: MyMemory ücretsizdir; sık isteklerde kota uyarısı verebilir.</div>
       </div>
     </div>
 
     <details>
       <summary>Tanılama / Sorun Giderme</summary>
-      <div class="hint" id="diagnostics">
-        Kontroller yapılıyor…
-      </div>
-      <div class="hint" style="margin-top:8px">
-        ✳️ Not: iOS Safari çoğu sürümde <b>SpeechRecognition</b> desteklemez. Bu durumda aşağıdaki <b>Manuel Mod</b> ile yazıp çevirebilirsiniz.
-      </div>
+      <div class="hint" id="diagnostics">Kontroller yapılıyor…</div>
+      <ul class="hint">
+        <li>HTTPS zorunludur (GitHub Pages uygundur).</li>
+        <li>iOS Safari çoğu sürümde <b>SpeechRecognition</b> desteklemez. Bu durumda Manuel Mod’u kullanın.</li>
+        <li>“Quota exceeded” görürseniz birkaç saniye sonra tekrar deneyin.</li>
+      </ul>
     </details>
 
     <div class="card" style="margin-top:12px">
       <h3>✍️ Manuel Mod (Ses tanıma yoksa kullan)</h3>
       <div class="row">
-        <textarea id="manualInput" class="text" style="min-height:60px;width:100%" placeholder="Metni yazın ve Çevir'e basın…"></textarea>
-      </div>
-      <div class="row">
-        <button class="btn primary" id="manualTranslateBtn">Çevir</button>
-      </div>
-    </div>
-
-    <footer>
-      Güvenli bağlantı (HTTPS) ve destekli tarayıcı gereklidir. Sorun olursa “Tanılama”yı kontrol edin.
-    </footer>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script>
-    // ====== Yardımcılar ======
-    const $ = (id) => document.getElementById(id);
-    const statusEl = $("status");
-    const statusText = $("statusText");
-    const recognizedText = $("recognizedText");
-    const translatedText = $("translatedText");
-    const startBtn = $("startBtn");
-    const stopBtn = $("stopBtn");
-    const speakBtn = $("speakBtn");
-    const manualInput = $("manualInput");
-    const manualTranslateBtn = $("manualTranslateBtn");
-    const sourceLang = $("sourceLang");
-    const targetLang = $("targetLang");
-    const diagnostics = $("diagnostics");
-    const toastEl = $("toast");
-
-    function setStatus(type, text){
-      statusEl.classList.remove("ok","err");
-      if(type==="ok") statusEl.classList.add("ok");
-      if(type==="err") statusEl.classList.add("err");
-      statusText.textContent = text || "";
-    }
-    function toast(msg){
-      toastEl.textContent = msg; toastEl.style.display="block";
-      setTimeout(()=> toastEl.style.display="none", 2200);
-    }
-    function mapVoiceLang(target){
-      // hedef 'en' → 'en-US' gibi sesi seçerken daha isabetli dil kodu
-      const map = { en:"en-US", tr:"tr-TR", de:"de-DE", fr:"fr-FR", es:"es-ES" };
-      return map[target] || target;
-    }
-
-    // ====== Özellik Kontrolleri ======
-    const hasHTTPS = location.protocol === "https:";
-    const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-    const hasRecognition = !!SpeechRecognition;
-    const hasSynthesis = "speechSynthesis" in window;
-
-    function renderDiagnostics(){
-      diagnostics.innerHTML = `
-        • HTTPS: <b>${hasHTTPS ? "Evet" : "Hayır"}</b><br>
-        • Mikrofon (getUserMedia): <b>${hasGetUserMedia ? "Evet" : "Hayır"}</b><br>
-        • SpeechRecognition: <b>${hasRecognition ? "Evet" : "Hayır"}</b><br>
-        • SpeechSynthesis (Sesle Oku): <b>${hasSynthesis ? "Evet" : "Hayır"}</b><br>
-        • Tarayıcı: <b>${navigator.userAgent}</b>
-      `;
-    }
-    renderDiagnostics();
-
-    if(!hasHTTPS){
-      setStatus("err","HTTPS gerekli (GitHub Pages uygundur)");
-      toast("Uyarı: HTTPS değil. Özellikler kısıtlanabilir.");
-    }
-
-    // ====== Ses Tanıma Kurulumu ======
-    let recognition = null;
-    let listening = false;
-    let lastTranslated = "";
-
-    function startListening(){
-      if(!hasRecognition){ toast("Bu tarayıcıda ses tanıma yok. Manuel Modu kullanın."); return; }
-      if(!hasGetUserMedia){ toast("Mikrofon desteği yok."); return; }
-
-      // Önce mikrofon izni iste
-      navigator.mediaDevices.getUserMedia({audio:true})
-        .then(() => {
-          recognition = new SpeechRecognition();
-          recognition.lang = sourceLang.value; // ör: tr-TR
-          recognition.interimResults = false;
-          recognition.maxAlternatives = 1;
-
-          recognition.onstart = () => {
-            listening = true;
-            setStatus("", "Dinleniyor…");
-            statusEl.querySelector(".dot").style.background = getComputedStyle(document.documentElement).getPropertyValue('--warn');
-            stopBtn.disabled = false;
-            startBtn.disabled = true;
-            recognizedText.textContent = "—";
-          };
-          recognition.onresult = (e) => {
-            const transcript = e.results[0][0].transcript || "";
-            recognizedText.textContent = transcript || "—";
-            if(transcript.trim()){
-              translateText(transcript, sourceLang.value, targetLang.value);
-            }else{
-              setStatus("err","Ses algılanmadı");
-              toast("Ses algılanmadı. Daha net konuşmayı deneyin.");
-            }
-          };
-          recognition.onerror = (e) => {
-            console.error("Recognition error:", e.error);
-            const map = {
-              "not-allowed":"Mikrofon izni verilmedi.",
-              "service-not-allowed":"Tarayıcı ses tanımaya izin vermedi.",
-              "no-speech":"Ses algılanmadı.",
-              "audio-capture":"Mikrofon bulunamadı.",
-              "aborted":"İşlem iptal edildi.",
-              "network":"Ağ hatası.",
-              "bad-grammar":"Gramer hatası.",
-              "language-not-supported":"Dil desteklenmiyor."
-            };
-            setStatus("err", map[e.error] || ("Hata: "+e.error));
-            toast(map[e.error] || "Ses tanıma hatası");
-          };
-          recognition.onend = () => {
-            listening = false;
-            setStatus("ok","Dinleme bitti");
-            statusEl.querySelector(".dot").style.background = getComputedStyle(document.documentElement).getPropertyValue('--ok');
-            stopBtn.disabled = true;
-            startBtn.disabled = false;
-          };
-
-          recognition.start();
-        })
-        .catch(err => {
-          console.error("Mic permission error:", err);
-          setStatus("err","Mikrofon izni reddedildi veya yok");
-          toast("Lütfen tarayıcıdan mikrofona izin verin.");
-        });
-    }
-
-    function stopListening(){
-      try{ recognition && recognition.stop(); }catch(_){}
-    }
-
-    startBtn.addEventListener("click", startListening);
-    stopBtn.addEventListener("click", stopListening);
-
-    // ====== Çeviri (LibreTranslate) ======
-    async function translateText(text, source, target){
-      setStatus("", "Çevriliyor…");
-      const url = "https://libretranslate.de/translate";
-      try{
-        const res = await fetch(url, {
-          method:"POST",
-          mode:"cors",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ q:text, source: source.split('-')[0], target, format:"text" })
-          // LibreTranslate kaynak dilde 'tr-TR' değil 'tr' bekler → split('-')[0]
-        });
-        if(!res.ok){
-          const t = await res.text();
-          throw new Error("Çeviri servisi hatası: " + t);
-        }
-        const data = await res.json();
-        const out = data && data.translatedText ? data.translatedText : "";
-        translatedText.textContent = out || "—";
-        lastTranslated = out;
-        if(out){
-          setStatus("ok","Çeviri hazır");
-          speakBtn.disabled = !hasSynthesis;
-        }else{
-          setStatus("err","Çeviri boş döndü");
-          speakBtn.disabled = true;
-        }
-      }catch(err){
-        console.error(err);
-        setStatus("err","Çeviri hatası");
-        translatedText.textContent = "Çeviri hatası. (Ağ / kota / CORS)"
-        speakBtn.disabled = true;
-      }
-    }
-
-    // ====== Seslendirme ======
-    let voices = [];
-    function loadVoices(){
-      voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    }
-    if(hasSynthesis){
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    function speak(text, langCode2){
-      if(!hasSynthesis){ toast("Bu tarayıcıda seslendirme yok."); return; }
-      if(!text || !text.trim()){ toast("Seslendirecek metin yok."); return; }
-
-      const desired = mapVoiceLang(langCode2); // 'en' → 'en-US'
-      const voice = voices.find(v => (v.lang||"").toLowerCase().startsWith(langCode2.toLowerCase()))
-                  || voices.find(v => (v.lang||"").toLowerCase()===desired.toLowerCase())
-                  || voices[0];
-
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = voice?.lang || desired;
-      u.voice = voice || null;
-      u.rate = 1; u.pitch = 1;
-      try{ window.speechSynthesis.cancel(); }catch(_){}
-      window.speechSynthesis.speak(u);
-    }
-
-    speakBtn.addEventListener("click", ()=> speak(lastTranslated, targetLang.value));
-
-    // ====== Manuel Mod ======
-    manualTranslateBtn.addEventListener("click", ()=>{
-      const t = manualInput.value.trim();
-      if(!t){ toast("Metin girin"); return; }
-      recognizedText.textContent = t;
-      translateText(t, sourceLang.value, targetLang.value);
-    });
-  </script>
-</body>
-</html>
+        <textarea id="manualInput" class="text" style="min-height:70px;width:100%" placeholder="Metni yazın ve Çevir'e basın…"></
