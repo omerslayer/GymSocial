@@ -1,42 +1,56 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talk2Translate</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Talk2Translate — Vosk (Offline STT) + MyMemory</title>
 <style>
   :root {
-    --bg1:#0f172a; --bg2:#1e293b; --glass:rgba(255,255,255,.08);
-    --text:#f1f5f9; --muted:#94a3b8; --accent:#ec4899;
+    --bg1:#0f172a; --bg2:#111827;
+    --glass:rgba(255,255,255,.06);
+    --ink:#e5e7eb; --muted:#9ca3af;
     --line:rgba(255,255,255,.12);
+    --accent:#ec4899; --accent2:#8b5cf6;
+    --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
   }
   *{box-sizing:border-box}
-  body {margin:0;font-family:sans-serif;
+  html,body{height:100%}
+  body{
+    margin:0; font-family:ui-sans-serif,system-ui,Arial;
     background:linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:var(--text);display:flex;justify-content:center;padding:20px;}
-  .wrap {width:min(900px,100%)}
-  .card {background:var(--glass);border:1px solid var(--line);
-    border-radius:18px;padding:18px;backdrop-filter:blur(16px);}
-  header{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-  h1{margin:0;font-size:22px}
-  .badges{display:flex;gap:6px;flex-wrap:wrap}
-  .badge{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line)}
-  .ok{background:rgba(16,185,129,.15)}
-  .warn{background:rgba(251,191,36,.15)}
-  .err{background:rgba(239,68,68,.15)}
-  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-  select,button,textarea{border:none;border-radius:12px;padding:10px;font-size:15px;color:var(--text);background:rgba(255,255,255,.09)}
-  button{cursor:pointer;background:linear-gradient(135deg,var(--accent),#8b5cf6);font-weight:600}
-  button.secondary{background:rgba(255,255,255,.09);border:1px solid var(--line)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    color:var(--ink); display:flex; justify-content:center; padding:24px;
+  }
+  .wrap{width:min(960px,100%)}
+  .card{
+    background:var(--glass); border:1px solid var(--line);
+    border-radius:20px; padding:18px; backdrop-filter:blur(16px);
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+  }
+  header{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
+  h1{margin:0; font-size:22px}
+  .badges{display:flex; gap:8px; flex-wrap:wrap}
+  .badge{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--line)}
+  .ok{background:rgba(16,185,129,.15)} .warn{background:rgba(245,158,11,.15)} .err{background:rgba(239,68,68,.15)}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  select,button,textarea{
+    border:none; border-radius:12px; padding:10px 12px; font-size:15px;
+    color:var(--ink); background:rgba(255,255,255,.08);
+  }
+  button{cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); font-weight:700}
+  button.secondary{background:rgba(255,255,255,.08); border:1px solid var(--line); font-weight:600}
+  button:disabled{opacity:.55; cursor:not-allowed}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
   @media(max-width:860px){.grid{grid-template-columns:1fr}}
-  .box{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:16px;padding:12px;min-height:120px;display:flex;flex-direction:column}
-  .box h3{margin:0 0 8px;font-size:14px;color:var(--muted)}
-  .view{flex:1;background:rgba(0,0,0,.25);border-radius:12px;padding:10px;overflow:auto}
-  textarea{width:100%;resize:vertical;min-height:90px}
-  .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-  footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+  .box{background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:16px; padding:12px; min-height:120px; display:flex; flex-direction:column}
+  .box h3{margin:0 0 8px; font-size:14px; color:var(--muted)}
+  .view{flex:1; background:rgba(0,0,0,.25); border-radius:12px; padding:10px; overflow:auto; line-height:1.5}
+  textarea{width:100%; resize:vertical; min-height:90px}
+  .bar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px}
+  .progress{
+    width:100%; height:10px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; margin-top:6px;
+  }
+  .progress > span{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%}
+  footer{margin-top:14px; font-size:12px; color:var(--muted); text-align:center}
 </style>
 </head>
 <body>
@@ -46,21 +60,24 @@
       <h1>🎤 Talk2Translate</h1>
       <div class="badges">
         <span id="httpsBadge" class="badge">HTTPS kontrol...</span>
-        <span id="srBadge" class="badge">SR kontrol...</span>
+        <span id="voskBadge" class="badge">Vosk yükleniyor...</span>
         <span id="micBadge" class="badge">Mikrofon...</span>
       </div>
     </header>
 
     <div class="controls">
+      <!-- Tanıma dili (Vosk modeli) -->
       <select id="sourceLang">
-        <option value="tr-TR" data-iso="tr" selected>Türkçe</option>
-        <option value="en-US" data-iso="en">İngilizce</option>
-        <option value="de-DE" data-iso="de">Almanca</option>
-        <option value="fr-FR" data-iso="fr">Fransızca</option>
-        <option value="es-ES" data-iso="es">İspanyolca</option>
-        <option value="ru-RU" data-iso="ru">Rusça</option>
-        <option value="ar-SA" data-iso="ar">Arapça</option>
+        <option value="tr" data-recog="tr" data-voice="tr-TR" selected>Türkçe</option>
+        <option value="en" data-recog="en" data-voice="en-US">İngilizce</option>
+        <option value="de" data-recog="de" data-voice="de-DE">Almanca</option>
+        <option value="fr" data-recog="fr" data-voice="fr-FR">Fransızca</option>
+        <option value="es" data-recog="es" data-voice="es-ES">İspanyolca</option>
+        <option value="ru" data-recog="ru" data-voice="ru-RU">Rusça</option>
+        <option value="ar" data-recog="ar" data-voice="ar-SA">Arapça</option>
       </select>
+
+      <!-- Çeviri hedef dili -->
       <select id="targetLang">
         <option value="en">İngilizce</option>
         <option value="tr">Türkçe</option>
@@ -70,15 +87,28 @@
         <option value="ru">Rusça</option>
         <option value="ar">Arapça</option>
       </select>
+
       <button id="startBtn">Başlat</button>
       <button id="stopBtn" class="secondary" disabled>Durdur</button>
-      <label><input type="checkbox" id="autoSpeak" checked> Otomatik Oku</label>
+      <label title="Çeviri otomatik sesle okunsun mu?"><input type="checkbox" id="autoSpeak" checked> Otomatik Oku</label>
       <button id="speakBtn" class="secondary" disabled>Oku</button>
     </div>
 
-    <div class="grid">
-      <div class="box"><h3>Algılanan</h3><div id="recognizedText" class="view">—</div></div>
-      <div class="box"><h3>Çevrilen</h3><div id="translatedText" class="view">—</div></div>
+    <div class="box">
+      <strong>Model Yükleme Durumu</strong>
+      <div class="progress"><span id="modelProgress"></span></div>
+      <small id="modelStatus" class="muted">Dil seçince ilgili model yüklenir. İlk sefer biraz uzun sürebilir.</small>
+    </div>
+
+    <div class="grid" style="margin-top:14px">
+      <div class="box">
+        <h3>Algılanan</h3>
+        <div id="recognizedText" class="view">—</div>
+      </div>
+      <div class="box">
+        <h3>Çevrilen</h3>
+        <div id="translatedText" class="view">—</div>
+      </div>
     </div>
 
     <div class="box" style="margin-top:14px">
@@ -90,11 +120,15 @@
       </div>
     </div>
 
-    <footer>Ücretsiz çeviri: MyMemory • Chrome/Edge + HTTPS önerilir.</footer>
+    <footer>Ses tanıma: Vosk (tarayıcı içinde, offline) • Çeviri: MyMemory (ücretsiz) • En iyi deneyim için HTTPS + Chrome/Edge</footer>
   </div>
 </div>
 
+<!-- Vosk Browser (UMD) -->
+<script src="https://unpkg.com/vosk-browser/dist/umd/index.js"></script>
+
 <script>
+/* ---------- UI Elemanları ---------- */
 const recognizedEl = document.getElementById('recognizedText');
 const translatedEl = document.getElementById('translatedText');
 const startBtn = document.getElementById('startBtn');
@@ -106,24 +140,106 @@ const manualTranslateBtn = document.getElementById('manualTranslateBtn');
 const sourceSel = document.getElementById('sourceLang');
 const targetSel = document.getElementById('targetLang');
 const httpsBadge = document.getElementById('httpsBadge');
-const srBadge = document.getElementById('srBadge');
+const voskBadge = document.getElementById('voskBadge');
 const micBadge = document.getElementById('micBadge');
 const lastErrorEl = document.getElementById('lastError');
+const modelProgress = document.getElementById('modelProgress');
+const modelStatus = document.getElementById('modelStatus');
 
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let lastTranslated = '';
-let recognition = null;
-let silenceTimer = null;
-
-// Rozetler
 const setBadge = (el, text, cls) => { el.className = `badge ${cls||''}`; el.textContent = text; };
 const setError = (msg) => lastErrorEl.textContent = `Son hata: ${msg}`;
 const isHttps = location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname);
-setBadge(httpsBadge, isHttps ? 'HTTPS ✔' : 'HTTPS gerekli', isHttps ? 'ok' : 'warn');
-if (SR) setBadge(srBadge, 'SpeechRecognition ✔', 'ok'); else setBadge(srBadge, 'SR destek yok', 'err');
-navigator.mediaDevices.getUserMedia({audio:true}).then(()=>setBadge(micBadge,'Mikrofon ✔','ok')).catch(()=>setBadge(micBadge,'Mikrofon yok','err'));
+setBadge(httpsBadge, isHttps ? 'HTTPS ✔' : 'HTTPS önerilir', isHttps ? 'ok' : 'warn');
 
-// Çeviri
+/* ---------- Vosk Kurulum ---------- */
+/*
+  MODEL URL HARİTASI:
+  Bu URL'leri kendi GitHub Pages’ine göre düzenle.
+  Örn: https://kullaniciadi.github.io/repo-adi/models/tr/
+  İlk test için sadece tr ve en klasörlerini yüklemen yeterli.
+*/
+const MODEL_BASES = {
+  tr: '/models/tr/',  // Türkçe modeli koyacağın klasör
+  en: '/models/en/',
+  de: '/models/de/',
+  fr: '/models/fr/',
+  es: '/models/es/',
+  ru: '/models/ru/',
+  ar: '/models/ar/'
+};
+
+let AudioContextCls = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let mediaStream = null;
+let mediaNode = null;
+let recognizer = null;
+let model = null;
+let currentLang = null;
+let running = false;
+let targetSampleRate = 16000; // Vosk için önerilen
+
+// Basit downsample: Float32(0..1) -> Int16(-32768..32767) @16kHz
+function downsampleTo16k(inputBuffer, sourceRate){
+  if (sourceRate === targetSampleRate) {
+    const out = new Int16Array(inputBuffer.length);
+    for (let i=0;i<inputBuffer.length;i++){
+      let s = Math.max(-1, Math.min(1, inputBuffer[i]));
+      out[i] = s<0 ? s*0x8000 : s*0x7FFF;
+    }
+    return out;
+  }
+  const ratio = sourceRate / targetSampleRate;
+  const newLen = Math.round(inputBuffer.length / ratio);
+  const out = new Int16Array(newLen);
+  let idx=0, acc=0;
+  for (let i=0;i<newLen;i++){
+    const start = Math.round(i*ratio);
+    const end = Math.round((i+1)*ratio);
+    acc = 0;
+    for (let j=start;j<end && j<inputBuffer.length;j++){ acc += inputBuffer[j]; }
+    const avg = acc / Math.max(1, end-start);
+    let s = Math.max(-1, Math.min(1, avg));
+    out[i] = s<0 ? s*0x8000 : s*0x7FFF;
+  }
+  return out;
+}
+
+async function ensureModel(langKey){
+  if (currentLang === langKey && model) return;
+  currentLang = langKey;
+  model = null;
+  recognizer = null;
+  setBadge(voskBadge, `Model yükleniyor (${langKey})...`, 'warn');
+  modelStatus.textContent = 'Dosyalar indiriliyor, ilk sefer uzun sürebilir...';
+
+  const { Vosk } = window;
+  // Vosk modülünü indirirken progress göstergesi:
+  Vosk.setLogLevel(0);
+
+  // Modeli oluştur
+  const baseUrl = MODEL_BASES[langKey];
+  if (!baseUrl) { setBadge(voskBadge, 'Dil modeli yok', 'err'); throw new Error('Model URL bulunamadı'); }
+
+  // Not: vosk-browser UMD API
+  const modelInstance = await Vosk.createModel(baseUrl, (p) => {
+    // p: { loaded, total }  — bazı paketlerde total bilinmeyebilir
+    const percent = p.total ? Math.round((p.loaded / p.total) * 100) : Math.min(99, Math.round(p.loaded/500000));
+    modelProgress.style.width = (percent || 0) + '%';
+  });
+
+  model = modelInstance;
+  setBadge(voskBadge, `Model hazır (${langKey}) ✔`, 'ok');
+  modelStatus.textContent = 'Model yüklendi. Mikrofonu başlatıp konuşabilirsiniz.';
+  modelProgress.style.width = '100%';
+}
+
+async function createRecognizer(){
+  if (!model) throw new Error('Model henüz hazır değil');
+  recognizer = new model.KaldiRecognizer(targetSampleRate);
+  recognizer.setWords(true);
+}
+
+/* ---------- Çeviri (MyMemory) ---------- */
 async function translateText(text, sourceISO, targetISO) {
   translatedEl.textContent = 'Çevriliyor...';
   try {
@@ -143,76 +259,114 @@ async function translateText(text, sourceISO, targetISO) {
   }
 }
 
-// Oku
+/* ---------- Sesli Okuma ---------- */
+let lastTranslated = '';
 function speakNow(){
   if (!lastTranslated) return;
+  const tgtVoice = targetSel.value; // en, tr, de...
+  // tarayıcı ses motoru için kabaca dil ayarı (her dilde tüm sesler garantili değildir)
   const u = new SpeechSynthesisUtterance(lastTranslated);
-  u.lang = targetSel.value;
+  // Basit eşleşme:
+  const voiceMap = { tr:'tr-TR', en:'en-US', de:'de-DE', fr:'fr-FR', es:'es-ES', ru:'ru-RU', ar:'ar-SA' };
+  u.lang = voiceMap[tgtVoice] || 'en-US';
   speechSynthesis.speak(u);
 }
 speakBtn.addEventListener('click', speakNow);
 
-// Manuel mod
+/* ---------- Manuel Mod ---------- */
 manualTranslateBtn.addEventListener('click', ()=>{
   const text = manualInput.value.trim();
   if (!text) return;
   recognizedEl.textContent = text;
-  translateText(text, sourceSel.selectedOptions[0].dataset.iso, targetSel.value);
+  const srcISO = sourceSel.value;      // tr, en, ...
+  const tgtISO = targetSel.value;      // tr, en, ...
+  translateText(text, srcISO, tgtISO);
 });
 
-// Dinleme
-startBtn.addEventListener('click', async ()=>{
-  if (!SR) { setError('Destek yok'); return; }
-  try { await navigator.mediaDevices.getUserMedia({audio:true}); } catch { setError('Mic izni yok'); return; }
+/* ---------- Mikrofon + Vosk Akışı ---------- */
+async function startListening(){
+  if (running) return;
+  running = true;
 
-  recognition = new SR();
-  recognition.lang = sourceSel.value;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  recognition.continuous = false; // Android uyumu
+  // Modeli dil seçimine göre hazırla
+  const langKey = sourceSel.value; // tr, en, ...
+  await ensureModel(langKey);
+  await createRecognizer();
 
-  recognition.onstart = () => {
-    console.log('🎤 Dinleme başladı, dil:', recognition.lang);
-    recognizedEl.textContent = 'Dinleniyor...';
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    silenceTimer = setTimeout(()=>recognition.stop(), 5000);
-  };
-  recognition.onspeechend = () => {
-    console.log('🛑 Konuşma sona erdi');
-    clearTimeout(silenceTimer);
-    recognition.stop();
-  };
-  recognition.onresult = (e) => {
-    clearTimeout(silenceTimer);
-    const transcript = e.results[0][0].transcript.trim();
-    console.log('📜 Algılanan metin:', transcript);
-    if (transcript) {
-      recognizedEl.textContent = transcript;
-      translateText(transcript, sourceSel.selectedOptions[0].dataset.iso, targetSel.value);
+  // Mikrofon
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    setBadge(micBadge,'Mikrofon ✔','ok');
+  }catch(err){
+    setBadge(micBadge,'Mikrofon yok','err');
+    setError('Mikrofon izni yok');
+    running = false;
+    return;
+  }
+
+  if (!audioCtx) audioCtx = new AudioContextCls({ sampleRate: 48000 }); // çoğu cihazda 44.1k/48k
+  const source = audioCtx.createMediaStreamSource(mediaStream);
+
+  // ScriptProcessorNode ile örnekleri al (deprecated ama yaygın destekli)
+  const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+  processor.onaudioprocess = (e) => {
+    if (!running || !recognizer) return;
+    const input = e.inputBuffer.getChannelData(0); // Float32
+    const pcm16 = downsampleTo16k(input, audioCtx.sampleRate); // Int16
+    // Vosk: acceptWaveform expects Int16Array
+    const res = recognizer.acceptWaveform(pcm16);
+    if (res) {
+      const r = recognizer.result(); // { text, result? }
+      if (r && r.text) {
+        recognizedEl.textContent = r.text;
+        // Çeviriyi tetikle
+        const srcISO = sourceSel.value;  // tr,en,...
+        const tgtISO = targetSel.value;
+        translateText(r.text, srcISO, tgtISO);
+      }
     } else {
-      recognizedEl.textContent = 'Hiç ses algılanmadı';
-      setError('Boş sonuç');
+      const p = recognizer.partialResult(); // { partial }
+      if (p && p.partial) {
+        recognizedEl.textContent = p.partial + ' …';
+      }
     }
   };
-  recognition.onerror = (e) => {
-    clearTimeout(silenceTimer);
-    console.error('❌ Hata:', e.error);
-    recognizedEl.textContent = `Hata: ${e.error}`;
-    setError(e.error);
-  };
-  recognition.onend = () => {
-    console.log('🔚 Dinleme sona erdi');
-    clearTimeout(silenceTimer);
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-  };
 
-  recognition.start();
-});
-stopBtn.addEventListener('click', ()=>{
-  if (recognition) { clearTimeout(silenceTimer); recognition.stop(); }
-});
+  source.connect(processor);
+  processor.connect(audioCtx.destination); // iOS için gerekebilir, ses çıkmıyor ama node'u canlı tutar
+
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+}
+
+function stopListening(){
+  running = false;
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t=>t.stop());
+    mediaStream = null;
+  }
+  if (recognizer) {
+    const finalRes = recognizer.finalResult();
+    if (finalRes && finalRes.text) {
+      recognizedEl.textContent = finalRes.text;
+    }
+  }
+}
+
+/* ---------- Olaylar ---------- */
+startBtn.addEventListener('click', startListening);
+stopBtn.addEventListener('click', stopListening);
+
+/* ---------- Başlangıç Rozetleri ---------- */
+(async ()=>{
+  try{
+    await navigator.mediaDevices.getUserMedia({audio:true});
+    setBadge(micBadge,'Mikrofon ✔','ok');
+  }catch{ setBadge(micBadge,'Mikrofon yok','err'); }
+  setBadge(voskBadge,'Dil seç → Model yüklensin','warn');
+})();
 </script>
 </body>
 </html>
